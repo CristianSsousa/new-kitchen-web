@@ -8,7 +8,13 @@ Interface web desenvolvida em React + TypeScript para gerenciamento de lista de 
 -   [TypeScript](https://www.typescriptlang.org/)
 -   [Vite](https://vitejs.dev/)
 -   [Tailwind CSS](https://tailwindcss.com/)
+-   [React Router DOM](https://reactrouter.com/)
+-   [React Hook Form](https://react-hook-form.com/)
+-   [Framer Motion](https://www.framer.com/motion/)
+-   [Lucide React](https://lucide.dev/)
+-   [React Hot Toast](https://react-hot-toast.com/)
 -   [Axios](https://axios-http.com/)
+-   [date-fns](https://date-fns.org/)
 
 ## 📋 Pré-requisitos
 
