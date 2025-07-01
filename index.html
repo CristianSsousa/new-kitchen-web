@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/heart.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>💕 Chá de Casa Nova - Nossa Lista de Presentes</title>
+        <meta
+            name="description"
+            content="Celebre conosco nosso novo lar! Lista de presentes especial para nosso chá de casa nova."
+        />
+
+        <!-- Google Fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=Dancing+Script:wght@400;500;600;700&display=swap"
+            rel="stylesheet"
+        />
+
+        <!-- Meta tags para redes sociais -->
+        <meta
+            property="og:title"
+            content="💕 Chá de Casa Nova - Nossa Lista de Presentes"
+        />
+        <meta
+            property="og:description"
+            content="Celebre conosco nosso novo lar! Ajude-nos a mobiliar nossa casa dos sonhos."
+        />
+        <meta property="og:type" content="website" />
+
+        <style>
+            /* Animação de loading inicial */
+            .loading-screen {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(135deg, #fdf2f8 0%, #f0f9ff 100%);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                transition: opacity 0.5s ease-out;
+            }
+
+            .loading-heart {
+                width: 50px;
+                height: 50px;
+                background: #ec4899;
+                transform: rotate(45deg);
+                animation: heartbeat 1.5s ease-in-out infinite;
+            }
+
+            .loading-heart::before,
+            .loading-heart::after {
+                content: "";
+                width: 50px;
+                height: 50px;
+                background: #ec4899;
+                border-radius: 50%;
+                position: absolute;
+            }
+
+            .loading-heart::before {
+                top: -25px;
+                left: 0;
+            }
+
+            .loading-heart::after {
+                top: 0;
+                left: -25px;
+            }
+
+            @keyframes heartbeat {
+                0%,
+                100% {
+                    transform: rotate(45deg) scale(1);
+                }
+                50% {
+                    transform: rotate(45deg) scale(1.1);
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Tela de loading -->
+        <div id="loading" class="loading-screen">
+            <div class="loading-heart"></div>
+        </div>
+
+        <div id="root"></div>
+        <script type="module" src="/src/main.tsx"></script>
+
+        <script>
+            // Remover tela de loading após carregar
+            window.addEventListener("load", () => {
+                const loading = document.getElementById("loading");
+                if (loading) {
+                    setTimeout(() => {
+                        loading.style.opacity = "0";
+                        setTimeout(() => loading.remove(), 500);
+                    }, 1000);
+                }
+            });
+        </script>
+    </body>
+</html>
