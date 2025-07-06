@@ -1,14 +1,18 @@
-import { ExternalLink, Filter, Gift, Search } from "lucide-react";
+import { ExternalLink, Filter, Gift, Search, Star } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { useItems } from "../hooks/useItems";
+import { useConvidado } from "../contexts/ConvidadoContext";
 import { formatCurrency } from "../utils/format";
 
 const ListaPresentes = () => {
-    const { items, loading, resgatarItem, error } = useItems();
+    const { items, loading, resgatarItem, cancelarResgate, error } = useItems();
+    const { convidado, stats, refreshStats } = useConvidado();
     const [search, setSearch] = useState("");
     const [selectedCategory, setSelectedCategory] = useState<string>("Todos");
     const [showResgatados, setShowResgatados] = useState(false);
+
+    const meusIds = stats?.itens_resgatados.map((it) => it.id) || [];
 
     // Extrair categorias únicas dos itens
     const categories = [
@@ -18,27 +22,62 @@ const ListaPresentes = () => {
 
     // Filtrar itens
     const filteredItems = items?.filter((item) => {
+        const termo = search.toLowerCase();
         const matchesSearch =
-            item.nome.toLowerCase().includes(search.toLowerCase()) ||
-            item.descricao.toLowerCase().includes(search.toLowerCase());
+            (item.nome ?? "").toLowerCase().includes(termo) ||
+            (item.descricao ?? "").toLowerCase().includes(termo);
         const matchesCategory =
             selectedCategory === "Todos" || item.categoria === selectedCategory;
-        const matchesResgatados = showResgatados ? true : !item.resgatado;
+        const matchesResgatados = showResgatados
+            ? true // mostrar todos
+            : (!item.resgatado || meusIds.includes(item.id)); // sempre mostrar meus próprios reservados
         return matchesSearch && matchesCategory && matchesResgatados;
     });
 
     // Função para resgatar presente
     const handleResgatar = async (id: number) => {
-        const nome = prompt(
-            "Por favor, digite seu nome para reservar este presente:"
-        );
-        if (!nome) return;
+        let nome: string;
+        
+        if (convidado) {
+            // Se é um convidado logado, usar o nome dele
+            nome = convidado.nome;
+        } else {
+            // Se não é convidado logado, pedir o nome
+            const inputNome = prompt(
+                "Por favor, digite seu nome para reservar este presente:"
+            );
+            if (!inputNome) return;
+            nome = inputNome;
+        }
 
         try {
-            await resgatarItem(id, { resgatado_por: nome });
+            await resgatarItem(id, { 
+                nome, 
+                codigo_convidado: convidado?.codigo_unico 
+            });
             toast.success("Presente reservado com sucesso! 🎁");
+            
+            // Atualizar estatísticas se for convidado logado
+            if (convidado) {
+                await refreshStats();
+            }
         } catch (err) {
             toast.error("Erro ao reservar presente. Tente novamente.");
+        }
+    };
+
+    // Função para cancelar reserva
+    const cancelarOwnResgate = async (id: number) => {
+        try {
+            await cancelarResgate(id);
+            toast.success("Reserva cancelada com sucesso! 🎁");
+            
+            // Atualizar estatísticas se for convidado logado
+            if (convidado) {
+                await refreshStats();
+            }
+        } catch (err) {
+            toast.error("Erro ao cancelar reserva. Tente novamente mais tarde.");
         }
     };
 
@@ -128,7 +167,9 @@ const ListaPresentes = () => {
                                 key={item.id}
                                 className={`relative bg-white rounded-2xl overflow-hidden border border-gray-100 ${
                                     item.resgatado
-                                        ? "grayscale opacity-80"
+                                        ? meusIds.includes(item.id)
+                                            ? "bg-green-50 border-green-200"
+                                            : "grayscale opacity-80"
                                         : "hover:border-primary-200"
                                 }`}
                             >
@@ -146,6 +187,15 @@ const ListaPresentes = () => {
                                     </span>
                                 </div>
 
+                                {/* Tag "Meu Presente" */}
+                                {meusIds.includes(item.id) && (
+                                    <div className="absolute z-10 right-4 bottom-4">
+                                        <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium bg-green-50 text-green-700 border border-green-200 shadow-md">
+                                            <Star className="h-4 w-4 mr-1 -mt-1" /> Meu Presente
+                                        </span>
+                                    </div>
+                                )}
+
                                 {/* Imagem com Overlay Gradiente */}
                                 <div className="relative h-64">
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-[1]" />
@@ -154,7 +204,7 @@ const ListaPresentes = () => {
                                         alt={item.nome}
                                         className="w-full h-full object-cover"
                                     />
-                                    {item.resgatado && (
+                                    {item.resgatado && !meusIds.includes(item.id) && (
                                         <div className="absolute inset-0 z-[2] bg-white/20 backdrop-blur-sm flex items-center justify-center">
                                             <div className="bg-black/80 px-6 py-4 rounded-xl text-white text-center transform -rotate-6 shadow-xl">
                                                 <p className="font-bold text-2xl">
@@ -195,7 +245,7 @@ const ListaPresentes = () => {
                                         </div>
 
                                         {/* Botão de Resgatar */}
-                                        {!item.resgatado && (
+                                        {!item.resgatado ? (
                                             <button
                                                 onClick={() =>
                                                     handleResgatar(item.id)
@@ -205,6 +255,15 @@ const ListaPresentes = () => {
                                                 <Gift className="h-5 w-5 mr-2" />
                                                 Reservar Presente
                                             </button>
+                                        ) : (
+                                            meusIds.includes(item.id) && (
+                                                <button
+                                                    onClick={() => cancelarOwnResgate(item.id)}
+                                                    className="w-full mt-4 bg-gradient-to-r from-green-600 to-green-700 text-white py-3 px-6 rounded-xl font-medium hover:from-green-700 hover:to-green-800 transition-all duration-200 flex items-center justify-center shadow-md hover:shadow-lg active:scale-[0.98]"
+                                                >
+                                                    Cancelar Reserva
+                                                </button>
+                                            )
                                         )}
                                     </div>
                                 </div>

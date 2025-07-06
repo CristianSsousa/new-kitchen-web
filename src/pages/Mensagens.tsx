@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { mensagensApi } from "../services/api";
 import type { Mensagem } from "../types";
+import { useConvidado } from "../contexts/ConvidadoContext";
 
 // Função para gerar posições e tamanhos aleatórios para as mensagens
 const getRandomStyles = () => {
@@ -42,8 +43,10 @@ const Mensagens = () => {
     >([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const { convidado } = useConvidado();
+
     const [formData, setFormData] = useState({
-        nome: "",
+        nome: convidado?.nome || "",
         mensagem: "",
     });
 
@@ -70,13 +73,16 @@ const Mensagens = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!formData.nome || !formData.mensagem) {
+        if ((!formData.nome && !convidado?.nome) || !formData.mensagem) {
             toast.error("Por favor, preencha todos os campos");
             return;
         }
 
         try {
-            await mensagensApi.createMensagem(formData);
+            await mensagensApi.createMensagem({
+                nome: convidado?.nome || formData.nome,
+                mensagem: formData.mensagem,
+            });
             toast.success("Mensagem enviada com sucesso! Aguarde aprovação 💕");
             setFormData({ nome: "", mensagem: "" });
             loadMensagens();
@@ -91,14 +97,14 @@ const Mensagens = () => {
     }, []);
 
     return (
-        <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-primary-50/30">
-            <div className="max-w-7xl mx-auto">
+        <div className="px-4 py-12 min-h-screen bg-gradient-to-b from-white sm:px-6 lg:px-8 to-primary-50/30">
+            <div className="mx-auto max-w-7xl">
                 {/* Cabeçalho */}
-                <div className="text-center mb-16">
+                <div className="mb-16 text-center">
                     <div className="inline-block">
-                        <h1 className="title-romantic mb-4 relative">
+                        <h1 className="relative mb-4 title-romantic">
                             Mural de Mensagens
-                            <Heart className="absolute -right-8 -top-6 h-6 w-6 text-romantic-gold/30 transform rotate-12" />
+                            <Heart className="absolute -top-6 -right-8 w-6 h-6 transform rotate-12 text-romantic-gold/30" />
                         </h1>
                     </div>
                     <p className="subtitle-romantic">
@@ -107,28 +113,31 @@ const Mensagens = () => {
                 </div>
 
                 {/* Formulário de Mensagem */}
-                <div className="max-w-2xl mx-auto">
-                    <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden mb-16">
+                <div className="mx-auto max-w-2xl">
+                    <div className="overflow-hidden mb-16 bg-white rounded-2xl border border-gray-100 shadow-xl">
                         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                            <div>
-                                <label htmlFor="nome" className="form-label">
-                                    Seu Nome
-                                </label>
-                                <input
-                                    type="text"
-                                    id="nome"
-                                    name="nome"
-                                    value={formData.nome}
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            nome: e.target.value,
-                                        })
-                                    }
-                                    className="input-field mt-2"
-                                    placeholder="Como devemos te chamar?"
-                                />
-                            </div>
+                            {/* Campo Nome apenas se não houver convidado logado */}
+                            {!convidado && (
+                                <div>
+                                    <label htmlFor="nome" className="form-label">
+                                        Seu Nome
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="nome"
+                                        name="nome"
+                                        value={formData.nome}
+                                        onChange={(e) =>
+                                            setFormData({
+                                                ...formData,
+                                                nome: e.target.value,
+                                            })
+                                        }
+                                        className="mt-2 input-field"
+                                        placeholder="Como devemos te chamar?"
+                                    />
+                                </div>
+                            )}
                             <div>
                                 <label
                                     htmlFor="mensagem"
@@ -147,7 +156,7 @@ const Mensagens = () => {
                                             mensagem: e.target.value,
                                         })
                                     }
-                                    className="input-field mt-2 resize-none"
+                                    className="mt-2 resize-none input-field"
                                     placeholder="Deixe aqui seu carinho e votos de felicidade..."
                                 />
                             </div>
@@ -156,7 +165,7 @@ const Mensagens = () => {
                                     type="submit"
                                     className="bg-gradient-to-r from-primary-500 to-primary-600 text-white py-2.5 px-5 rounded-xl font-medium hover:from-primary-600 hover:to-primary-700 transition-all duration-200 flex items-center justify-center shadow-md hover:shadow-lg"
                                 >
-                                    <Send className="h-4 w-4 mr-2" />
+                                    <Send className="mr-2 w-4 h-4" />
                                     Enviar Mensagem
                                 </button>
                             </div>
@@ -167,11 +176,11 @@ const Mensagens = () => {
                 {/* Lista de Mensagens */}
                 <div>
                     {loading ? (
-                        <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-6">
+                        <div className="gap-6 columns-1 md:columns-2 lg:columns-3 xl:columns-4">
                             {[1, 2, 3, 4, 5, 6].map((n) => (
                                 <div
                                     key={n}
-                                    className="break-inside-avoid mb-6"
+                                    className="mb-6 break-inside-avoid"
                                 >
                                     <div
                                         className={`h-[${
@@ -183,8 +192,8 @@ const Mensagens = () => {
                             ))}
                         </div>
                     ) : error ? (
-                        <div className="text-center text-red-500 py-12 bg-red-50 rounded-xl">
-                            <div className="max-w-md mx-auto">
+                        <div className="py-12 text-center text-red-500 bg-red-50 rounded-xl">
+                            <div className="mx-auto max-w-md">
                                 <p className="text-lg font-medium">{error}</p>
                                 <p className="mt-2 text-sm text-red-400">
                                     Por favor, tente novamente mais tarde.
@@ -192,18 +201,18 @@ const Mensagens = () => {
                             </div>
                         </div>
                     ) : mensagens.length === 0 ? (
-                        <div className="text-center py-16 bg-gray-50 rounded-xl">
-                            <MessageCircle className="h-16 w-16 text-gray-400 mx-auto mb-6" />
-                            <h3 className="text-xl font-serif font-medium text-gray-900 mb-3">
+                        <div className="py-16 text-center bg-gray-50 rounded-xl">
+                            <MessageCircle className="mx-auto mb-6 w-16 h-16 text-gray-400" />
+                            <h3 className="mb-3 font-serif text-xl font-medium text-gray-900">
                                 Nenhuma mensagem ainda
                             </h3>
-                            <p className="text-gray-500 max-w-md mx-auto">
+                            <p className="mx-auto max-w-md text-gray-500">
                                 Seja o primeiro a deixar uma mensagem de carinho
                                 para o casal!
                             </p>
                         </div>
                     ) : (
-                        <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-6">
+                        <div className="gap-6 columns-1 md:columns-2 lg:columns-3 xl:columns-4">
                             {mensagens.map((msg) => (
                                 <div
                                     key={msg.id}
@@ -214,22 +223,22 @@ const Mensagens = () => {
                                     >
                                         {/* Conteúdo da Mensagem */}
                                         <div className="relative flex-grow">
-                                            <div className="absolute -left-1 top-0 text-3xl text-romantic-gold/20">
+                                            <div className="absolute top-0 -left-1 text-3xl text-romantic-gold/20">
                                                 "
                                             </div>
-                                            <p className="text-gray-700 text-sm whitespace-pre-line pl-4 italic mb-4">
+                                            <p className="pl-4 mb-4 text-sm italic text-gray-700 whitespace-pre-line">
                                                 {msg.mensagem}
                                             </p>
-                                            <div className="absolute -bottom-2 right-0 text-3xl text-romantic-gold/20 transform rotate-180">
+                                            <div className="absolute right-0 -bottom-2 text-3xl transform rotate-180 text-romantic-gold/20">
                                                 "
                                             </div>
                                         </div>
 
                                         {/* Autor e Data */}
-                                        <div className="mt-auto pt-4 border-t border-gray-100">
-                                            <div className="flex items-center justify-between">
+                                        <div className="pt-4 mt-auto border-t border-gray-100">
+                                            <div className="flex justify-between items-center">
                                                 <div className="flex items-center space-x-3">
-                                                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-romantic-gold to-primary-300 flex items-center justify-center text-white font-bold text-sm">
+                                                    <div className="flex justify-center items-center w-8 h-8 text-sm font-bold text-white bg-gradient-to-r rounded-full from-romantic-gold to-primary-300">
                                                         {msg.nome
                                                             .charAt(0)
                                                             .toUpperCase()}
@@ -251,7 +260,7 @@ const Mensagens = () => {
                                                         </p>
                                                     </div>
                                                 </div>
-                                                <Heart className="h-4 w-4 text-romantic-gold opacity-40" />
+                                                <Heart className="w-4 h-4 opacity-40 text-romantic-gold" />
                                             </div>
                                         </div>
                                     </div>

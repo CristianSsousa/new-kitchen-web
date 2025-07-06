@@ -24,6 +24,7 @@ export interface Mensagem {
 
 export interface Confirmacao {
     id: number;
+    convidado_id: number;
     nome: string;
     quantidade_adultos: number;
     quantidade_criancas: number;
@@ -53,6 +54,7 @@ export interface EstatisticasDetalhadas {
     total_convidados: number;
     total_confirmacoes: number;
     valor_total_itens: number;
+    valor_resgatado_itens: number;
     porcentagem_concluida: number;
     mensagens_pendentes: number;
     categorias: CategoriaStats[];
@@ -80,7 +82,8 @@ export interface ApiResponse<T> {
 }
 
 export interface ResgatarItemRequest {
-    resgatado_por: string;
+    nome: string;
+    codigo_convidado?: string;
 }
 
 export interface CreateItemRequest {
@@ -98,9 +101,10 @@ export interface CreateMensagemRequest {
 }
 
 export interface CreateConfirmacaoRequest {
-    nome: string;
+    nome?: string;
     quantidade_adultos: number;
     quantidade_criancas: number;
+    codigo_convidado?: string;
 }
 
 export type PrioridadeName = "Baixa" | "Média" | "Alta";
@@ -152,4 +156,43 @@ export interface UpdateEventoRequest {
     horario: string;
     local: string;
     local_maps_url?: string;
+}
+
+export interface Convidado {
+    id: number;
+    nome: string;
+    codigo_unico: string;
+    email?: string;
+    telefone?: string;
+    observacoes?: string;
+    criado_em: string;
+    atualizado_em: string;
+}
+
+export interface ConvidadoPublico {
+    id: number;
+    nome: string;
+    codigo_unico: string;
+}
+
+export interface CreateConvidadoRequest {
+    nome: string;
+    email?: string;
+    telefone?: string;
+    observacoes?: string;
+}
+
+export interface UpdateConvidadoRequest {
+    nome: string;
+    email?: string;
+    telefone?: string;
+    observacoes?: string;
+}
+
+export interface ConvidadoStats {
+    convidado: ConvidadoPublico;
+    tem_confirmacao: boolean;
+    confirmacao?: Confirmacao;
+    itens_resgatados: Item[];
+    total_itens: number;
 }
