@@ -1,6 +1,10 @@
 import axios from "axios";
 import type {
     Confirmacao,
+    Convidado,
+    ConvidadoPublico,
+    ConvidadoStats,
+    CreateConvidadoRequest,
     CreateItemRequest,
     EstatisticasDetalhadas,
     EventoInfo,
@@ -8,7 +12,9 @@ import type {
     Mensagem,
     ResgatarItemRequest,
     Stats,
+    UpdateConvidadoRequest,
     UpdateEventoRequest,
+    CreateConfirmacaoRequest,
 } from "../types";
 const API_BASE_URL =
     import.meta.env.VITE_API_URL || "http://localhost:8080/api/v1/";
@@ -69,13 +75,13 @@ export const itemsApi = {
         data: ResgatarItemRequest
     ): Promise<Item> => {
         const response = await api.post(`/items/${id}/resgate`, data);
-        return response.data;
+        return response.data.item ?? response.data;
     },
 
     // Cancelar resgate de um item (público)
     cancelaResgate: async (id: number): Promise<Item> => {
         const response = await api.post(`/items/${id}/cancela-resgate`);
-        return response.data;
+        return response.data.item ?? response.data;
     },
 };
 
@@ -123,11 +129,7 @@ export const confirmacoesApi = {
     },
 
     // Criar uma nova confirmação (público)
-    createConfirmacao: async (confirmacao: {
-        nome: string;
-        quantidade_adultos: number;
-        quantidade_criancas: number;
-    }): Promise<Confirmacao> => {
+    createConfirmacao: async (confirmacao: CreateConfirmacaoRequest): Promise<Confirmacao> => {
         const response = await api.post("/confirmacoes", confirmacao);
         return response.data;
     },
@@ -193,6 +195,53 @@ export const eventoApi = {
             console.error("Erro ao atualizar informações do evento:", error);
             throw error;
         }
+    },
+};
+
+// ========== CONVIDADOS ==========
+export const convidadosApi = {
+    // Obter todos os convidados (admin)
+    getConvidados: async (): Promise<Convidado[]> => {
+        const response = await api.get("/admin/convidados");
+        return response.data;
+    },
+
+    // Obter convidado por código (público)
+    getConvidadoByCodigo: async (codigo: string): Promise<ConvidadoPublico> => {
+        const response = await api.get(`/convidados/${codigo}`);
+        return response.data;
+    },
+
+    // Obter estatísticas do convidado (público)
+    getConvidadoStats: async (codigo: string): Promise<ConvidadoStats> => {
+        const response = await api.get(`/convidados/${codigo}/stats`);
+        return response.data;
+    },
+
+    // Criar um novo convidado (admin)
+    createConvidado: async (convidado: CreateConvidadoRequest): Promise<Convidado> => {
+        const response = await api.post("/admin/convidados", convidado);
+        return response.data;
+    },
+
+    // Atualizar um convidado (admin)
+    updateConvidado: async (
+        id: number,
+        convidado: UpdateConvidadoRequest
+    ): Promise<Convidado> => {
+        const response = await api.put(`/admin/convidados/${id}`, convidado);
+        return response.data;
+    },
+
+    // Excluir um convidado (admin)
+    deleteConvidado: async (id: number): Promise<void> => {
+        await api.delete(`/admin/convidados/${id}`);
+    },
+
+    // Regenerar código do convidado (admin)
+    regenerarCodigo: async (id: number): Promise<{ message: string; codigo: string }> => {
+        const response = await api.post(`/admin/convidados/${id}/regenerar-codigo`);
+        return response.data;
     },
 };
 

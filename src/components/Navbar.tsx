@@ -10,25 +10,38 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "../contexts/AuthContext";
+import { useConvidado } from "../contexts/ConvidadoContext";
 
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
     const location = useLocation();
     const { isAuthenticated, logout } = useAuth();
+    const { convidado, clearConvidado } = useConvidado();
 
-    const navigation = [
+    // Extrair primeiro nome do convidado
+    const firstName = convidado?.nome.split(" ")[0] || "";
+
+    // Navegação para convidados logados
+    const guestNavigation = [
         { name: "Início", href: "/", icon: Home },
         { name: "Lista de Presentes", href: "/lista-presentes", icon: Gift },
         { name: "Mensagens", href: "/mensagens", icon: MessageCircle },
         { name: "Confirmação", href: "/confirmacao", icon: Users },
     ];
 
+    // Navegação para usuários não logados
+    const publicNavigation = [
+        { name: "Início", href: "/", icon: Home },
+    ];
+
+    const navigation = convidado ? guestNavigation : publicNavigation;
+
     const isActive = (path: string) => location.pathname === path;
 
     return (
-        <nav className="bg-white/90 backdrop-blur-md border-b border-romantic-gold/20 sticky top-0 z-50">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <nav className="sticky top-0 z-50 border-b backdrop-blur-md bg-white/90 border-romantic-gold/20">
+            <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
                 <div className="flex justify-between h-16">
                     {/* Logo */}
                     <div className="flex items-center">
@@ -36,14 +49,14 @@ const Navbar = () => {
                             to="/"
                             className="flex items-center space-x-2 group"
                         >
-                            <div className="p-2 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full group-hover:scale-110 transition-transform duration-200">
-                                <Heart className="h-6 w-6 text-white" />
+                            <div className="p-2 bg-gradient-to-r rounded-full transition-transform duration-200 from-primary-500 to-secondary-500 group-hover:scale-110">
+                                <Heart className="w-6 h-6 text-white" />
                             </div>
                             <div className="hidden sm:block">
                                 <h1 className="font-serif text-xl font-bold text-gradient">
                                     Chá de Casa Nova
                                 </h1>
-                                <p className="font-script text-sm text-romantic-gold -mt-1">
+                                <p className="-mt-1 text-sm font-script text-romantic-gold">
                                     Cristian & Flavia
                                 </p>
                             </div>
@@ -51,7 +64,28 @@ const Navbar = () => {
                     </div>
 
                     {/* Navigation Desktop */}
-                    <div className="hidden md:flex items-center space-x-8">
+                    <div className="hidden items-center space-x-8 md:flex">
+                        {/* Botão do Convidado (desktop) */}
+                        {convidado && (
+                            <button
+                                title="Clique para copiar seu código"
+                                onClick={() => {
+                                    navigator.clipboard.writeText(convidado.codigo_unico);
+                                }}
+                                className="flex items-center py-1.5 pr-4 pl-2 rounded-full transition-colors bg-primary-50 hover:bg-primary-100 group"
+                            >
+                                <div className="flex justify-center items-center mr-2 w-7 h-7 text-xs font-semibold text-white bg-gradient-to-r rounded-full shadow from-primary-500 to-secondary-500">
+                                    {firstName.charAt(0)}
+                                </div>
+                                <span className="mr-2 text-sm font-medium text-primary-700">
+                                    {firstName}
+                                </span>
+                                <code className="px-2 py-0.5 font-mono text-xs bg-white rounded border border-primary-200 text-primary-700 group-hover:bg-primary-50">
+                                    {convidado.codigo_unico}
+                                </code>
+                            </button>
+                        )}
+
                         {navigation.map((item) => {
                             const Icon = item.icon;
                             return (
@@ -64,40 +98,59 @@ const Navbar = () => {
                                             : "text-gray-600 hover:text-primary-600 hover:bg-primary-50"
                                     }`}
                                 >
-                                    <Icon className="h-4 w-4" />
+                                    <Icon className="w-4 h-4" />
                                     <span>{item.name}</span>
                                 </Link>
                             );
                         })}
+                        {convidado ? (
+                            <button
+                                onClick={clearConvidado}
+                                className="flex items-center px-3 py-2 space-x-2 text-sm font-medium text-gray-600 rounded-full hover:text-red-500"
+                            >
+                                <LogOut className="w-4 h-4" />
+                                <span>Sair</span>
+                            </button>
+                        ) : (
+                            !isAuthenticated && (
+                                <Link
+                                    to="/convidado"
+                                    className="flex items-center px-3 py-2 space-x-2 text-sm font-medium rounded-full text-primary-600 hover:text-primary-700 hover:bg-primary-50"
+                                >
+                                    <Users className="w-4 h-4" />
+                                    <span>Área do Convidado</span>
+                                </Link>
+                            )
+                        )}
                         {isAuthenticated && (
                             <>
                                 <Link
                                     to="/admin"
-                                    className="flex items-center space-x-2 px-3 py-2 rounded-full text-sm font-medium text-gray-600 hover:text-primary-600 hover:bg-primary-50"
+                                    className="flex items-center px-3 py-2 space-x-2 text-sm font-medium text-gray-600 rounded-full hover:text-primary-600 hover:bg-primary-50"
                                 >
-                                    <Users className="h-4 w-4" />
+                                    <Users className="w-4 h-4" />
                                     <span>Admin</span>
                                 </Link>
                                 <button
                                     onClick={logout}
-                                    className="flex items-center space-x-2 px-3 py-2 rounded-full text-sm font-medium text-gray-600 hover:text-red-500"
+                                    className="flex items-center px-3 py-2 space-x-2 text-sm font-medium text-gray-600 rounded-full hover:text-red-500"
                                 >
-                                    <LogOut className="h-4 w-4" />
+                                    <LogOut className="w-4 h-4" />
                                 </button>
                             </>
                         )}
                     </div>
 
                     {/* Mobile menu button */}
-                    <div className="md:hidden flex items-center">
+                    <div className="flex items-center md:hidden">
                         <button
                             onClick={() => setIsOpen(!isOpen)}
-                            className="p-2 rounded-md text-gray-600 hover:text-primary-600 hover:bg-primary-50 transition-colors duration-200"
+                            className="p-2 text-gray-600 rounded-md transition-colors duration-200 hover:text-primary-600 hover:bg-primary-50"
                         >
                             {isOpen ? (
-                                <X className="h-6 w-6" />
+                                <X className="w-6 h-6" />
                             ) : (
-                                <Menu className="h-6 w-6" />
+                                <Menu className="w-6 h-6" />
                             )}
                         </button>
                     </div>
@@ -106,7 +159,7 @@ const Navbar = () => {
 
             {/* Mobile Navigation */}
             {isOpen && (
-                <div className="md:hidden bg-white/95 backdrop-blur-md border-t border-romantic-gold/20">
+                <div className="border-t backdrop-blur-md md:hidden bg-white/95 border-romantic-gold/20">
                     <div className="px-2 pt-2 pb-3 space-y-1">
                         {navigation.map((item) => {
                             const Icon = item.icon;
@@ -121,26 +174,62 @@ const Navbar = () => {
                                             : "text-gray-600 hover:text-primary-600 hover:bg-primary-50"
                                     }`}
                                 >
-                                    <Icon className="h-5 w-5" />
+                                    <Icon className="w-5 h-5" />
                                     <span>{item.name}</span>
                                 </Link>
                             );
                         })}
+                        {convidado ? (
+                            <>
+                                <button
+                                    onClick={() => navigator.clipboard.writeText(convidado.codigo_unico)}
+                                    className="px-3 py-2 rounded-lg transition transform bg-primary-50 active:scale-95"
+                                >
+                                    <span className="text-sm font-medium text-primary-700">
+                                        Olá, {firstName}!
+                                    </span>
+                                    <code className="ml-2 text-xs font-mono px-1.5 py-0.5 rounded bg-white border border-primary-200 text-primary-700">
+                                        {convidado.codigo_unico}
+                                    </code>
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        clearConvidado();
+                                        setIsOpen(false);
+                                    }}
+                                    className="flex items-center px-3 py-2 space-x-3 text-sm font-medium text-gray-600 rounded-lg hover:text-red-500"
+                                >
+                                    <LogOut className="w-5 h-5" />
+                                    <span>Sair</span>
+                                </button>
+                            </>
+                        ) : (
+                            !isAuthenticated && (
+                                <Link
+                                    to="/convidado"
+                                    onClick={() => setIsOpen(false)}
+                                    className="flex items-center px-3 py-2 space-x-3 text-sm font-medium rounded-lg text-primary-600 hover:text-primary-700 hover:bg-primary-50"
+                                >
+                                    <Users className="w-5 h-5" />
+                                    <span>Área do Convidado</span>
+                                </Link>
+                            )
+                        )}
                         {isAuthenticated && (
                             <>
                                 <Link
                                     to="/admin"
                                     onClick={() => setIsOpen(false)}
-                                    className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-primary-600 hover:bg-primary-50"
+                                    className="flex items-center px-3 py-2 space-x-3 text-sm font-medium text-gray-600 rounded-lg hover:text-primary-600 hover:bg-primary-50"
                                 >
-                                    <Users className="h-5 w-5" />
+                                    <Users className="w-5 h-5" />
                                     <span>Admin</span>
                                 </Link>
                                 <button
                                     onClick={logout}
-                                    className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-red-500"
+                                    className="flex items-center px-3 py-2 space-x-3 text-sm font-medium text-gray-600 rounded-lg hover:text-red-500"
                                 >
-                                    <LogOut className="h-5 w-5" />
+                                    <LogOut className="w-5 h-5" />
                                 </button>
                             </>
                         )}

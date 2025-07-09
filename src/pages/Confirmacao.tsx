@@ -2,32 +2,40 @@ import { Heart, Minus, Plus, Users } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { confirmacoesApi } from "../services/api";
+import { useConvidado } from "../contexts/ConvidadoContext";
 
 const Confirmacao = () => {
     const [loading, setLoading] = useState(false);
+    const { convidado, stats, refreshStats } = useConvidado();
     const [formData, setFormData] = useState({
-        nome: "",
         quantidade_adultos: 1,
         quantidade_criancas: 0,
     });
 
+    // Verificar se o convidado já tem confirmação
+    const jaTemConfirmacao = stats?.tem_confirmacao;
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!formData.nome.trim()) {
-            toast.error("Por favor, preencha seu nome");
-            return;
-        }
-
         try {
             setLoading(true);
-            await confirmacoesApi.createConfirmacao(formData);
+            const requestData = {
+                ...formData,
+                codigo_convidado: convidado?.codigo_unico,
+            };
+            await confirmacoesApi.createConfirmacao(requestData);
             toast.success("Que alegria! Sua presença foi confirmada! 🎉");
-            setFormData({
-                nome: "",
-                quantidade_adultos: 1,
-                quantidade_criancas: 0,
-            });
+            
+            // Atualizar estatísticas se for convidado logado
+            if (convidado) {
+                await refreshStats();
+            } else {
+                setFormData({
+                    quantidade_adultos: 1,
+                    quantidade_criancas: 0,
+                });
+            }
         } catch (err) {
             toast.error("Erro ao enviar confirmação. Tente novamente.");
         } finally {
@@ -46,42 +54,52 @@ const Confirmacao = () => {
                             <Heart className="absolute -right-8 -top-6 h-6 w-6 text-romantic-gold/30 transform rotate-12" />
                         </h1>
                     </div>
-                    <p className="subtitle-romantic">
-                        Sua presença é muito importante para nós! 💝
-                    </p>
+                    {convidado ? (
+                        <p className="subtitle-romantic">
+                            Olá, {convidado.nome}! {jaTemConfirmacao ? "Sua presença já foi confirmada! 🎉" : "Confirme sua presença! 💝"}
+                        </p>
+                    ) : (
+                        <p className="subtitle-romantic">
+                            Sua presença é muito importante para nós! 💝
+                        </p>
+                    )}
                 </div>
 
                 {/* Formulário */}
                 <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
                     <div className="p-8">
-                        <form onSubmit={handleSubmit} className="space-y-8">
-                            {/* Nome */}
-                            <div>
-                                <label htmlFor="nome" className="form-label">
-                                    Seu Nome
-                                    <span className="text-romantic-gold ml-1">
-                                        *
-                                    </span>
-                                </label>
-                                <div className="mt-2">
-                                    <input
-                                        type="text"
-                                        id="nome"
-                                        name="nome"
-                                        required
-                                        value={formData.nome}
-                                        onChange={(e) =>
-                                            setFormData({
-                                                ...formData,
-                                                nome: e.target.value,
-                                            })
-                                        }
-                                        className="input-field"
-                                        placeholder="Como devemos te chamar?"
-                                    />
+                        {jaTemConfirmacao && stats?.confirmacao ? (
+                            <div className="text-center space-y-4">
+                                <div className="bg-green-50 rounded-xl p-6">
+                                    <h3 className="text-lg font-semibold text-green-800 mb-4">
+                                        ✅ Presença Confirmada!
+                                    </h3>
+                                    <div className="grid grid-cols-2 gap-4 text-sm">
+                                        <div>
+                                            <span className="text-green-600 font-medium">Adultos:</span>
+                                            <p className="text-green-800 text-xl font-bold">
+                                                {stats.confirmacao.quantidade_adultos}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <span className="text-green-600 font-medium">Crianças:</span>
+                                            <p className="text-green-800 text-xl font-bold">
+                                                {stats.confirmacao.quantidade_criancas}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="mt-4 pt-4 border-t border-green-200">
+                                        <p className="text-green-700">
+                                            <strong>Total: {stats.confirmacao.quantidade_adultos + stats.confirmacao.quantidade_criancas} pessoas</strong>
+                                        </p>
+                                    </div>
                                 </div>
+                                <p className="text-gray-600">
+                                    Mal podemos esperar para te ver no nosso evento! 💕
+                                </p>
                             </div>
-
+                        ) : (
+                            <form onSubmit={handleSubmit} className="space-y-8">
                             {/* Quantidade de Convidados */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {/* Quantidade de Adultos */}
@@ -244,6 +262,7 @@ const Confirmacao = () => {
                                 </button>
                             </div>
                         </form>
+                        )}
                     </div>
                 </div>
             </div>

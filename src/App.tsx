@@ -1,11 +1,14 @@
 import { Toaster } from "react-hot-toast";
 import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
+import ConvidadoRoute from "./components/ConvidadoRoute";
 import Footer from "./components/Footer";
 import Navbar from "./components/Navbar";
 import PrivateRoute from "./components/PrivateRoute";
 import { AuthProvider } from "./contexts/AuthContext";
+import { ConvidadoProvider } from "./contexts/ConvidadoContext";
 import Admin from "./pages/Admin";
 import Confirmacao from "./pages/Confirmacao";
+import ConvidadoLogin from "./pages/ConvidadoLogin";
 import Home from "./pages/Home";
 import ListaPresentes from "./pages/ListaPresentes";
 import Login from "./pages/Login";
@@ -15,6 +18,7 @@ function App() {
     return (
         <Router>
             <AuthProvider>
+                <ConvidadoProvider>
                 <div className="min-h-screen bg-gradient-romantic">
                     {/* Configuração de notificações */}
                     <Toaster
@@ -56,14 +60,31 @@ function App() {
                             <Route path="/" element={<Home />} />
                             <Route
                                 path="/lista-presentes"
-                                element={<ListaPresentes />}
+                                element={
+                                    <ConvidadoRoute>
+                                        <ListaPresentes />
+                                    </ConvidadoRoute>
+                                }
                             />
-                            <Route path="/mensagens" element={<Mensagens />} />
+                            <Route 
+                                path="/mensagens" 
+                                element={
+                                    <ConvidadoRoute>
+                                        <Mensagens />
+                                    </ConvidadoRoute>
+                                } 
+                            />
                             <Route
                                 path="/confirmacao"
-                                element={<Confirmacao />}
+                                element={
+                                    <ConvidadoRoute>
+                                        <Confirmacao />
+                                    </ConvidadoRoute>
+                                }
                             />
                             <Route path="/login" element={<Login />} />
+                            <Route path="/convidado" element={<ConvidadoLogin />} />
+                            <Route path="/convidado/:codigo" element={<ConvidadoLogin />} />
                             <Route
                                 path="/admin"
                                 element={
@@ -109,6 +130,7 @@ function App() {
                         </div>
                     </div>
                 </div>
+                </ConvidadoProvider>
             </AuthProvider>
         </Router>
     );

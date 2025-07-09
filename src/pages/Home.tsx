@@ -9,10 +9,12 @@ import {
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { eventoApi } from "../services/api";
+import { useConvidado } from "../contexts/ConvidadoContext";
 import type { EventoInfo } from "../types";
 
 const Home = () => {
     const [eventoInfo, setEventoInfo] = useState<EventoInfo | null>(null);
+    const { convidado } = useConvidado();
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -78,7 +80,7 @@ const Home = () => {
                                 <div className="animate-pulse">
                                     <div className="h-8 bg-gray-200 rounded w-48 mx-auto"></div>
                                 </div>
-                            ) : eventoInfo?.data ? (
+                            ) : convidado && eventoInfo?.data ? (
                                 <>
                                     <p className="text-2xl font-bold text-primary-600 font-serif">
                                         {formatarData(eventoInfo.data)}
@@ -103,19 +105,25 @@ const Home = () => {
                         {/* Call to Actions */}
                         <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slideUp">
                             <Link
-                                to="/lista-presentes"
+                                to="/convidado"
                                 className="btn-primary inline-flex items-center space-x-2"
                             >
                                 <Gift className="h-5 w-5" />
-                                <span>Ver Lista de Presentes</span>
+                                <span>Área do Convidado</span>
                             </Link>
                             <Link
-                                to="/confirmacao"
+                                to="/convidado"
                                 className="btn-secondary inline-flex items-center space-x-2"
                             >
                                 <Heart className="h-5 w-5" />
-                                <span>Confirmar Presença</span>
+                                <span>Acessar com Código</span>
                             </Link>
+                        </div>
+                        <div className="mt-4 text-center">
+                            <p className="text-sm text-gray-600 max-w-lg mx-auto">
+                                Para acessar a lista de presentes, mensagens e confirmação, 
+                                você precisa inserir seu código de convidado.
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -138,7 +146,7 @@ const Home = () => {
                                     <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto"></div>
                                     <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
                                 </div>
-                            ) : eventoInfo?.local ? (
+                            ) : convidado && eventoInfo?.local ? (
                                 <>
                                     <p className="text-gray-600 whitespace-pre-line">
                                         {eventoInfo.local}
@@ -176,7 +184,7 @@ const Home = () => {
                                 <div className="animate-pulse">
                                     <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
                                 </div>
-                            ) : eventoInfo?.horario ? (
+                            ) : convidado && eventoInfo?.horario ? (
                                 <p className="text-gray-600">
                                     {formatarHorario(eventoInfo.horario)}
                                 </p>
