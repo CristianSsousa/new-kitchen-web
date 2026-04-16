@@ -81,6 +81,10 @@ export interface ApiResponse<T> {
     error?: string;
 }
 
+export interface ApiErrorResponse {
+    error: string;
+}
+
 export interface ResgatarItemRequest {
     nome: string;
     codigo_convidado?: string;

@@ -1,4 +1,5 @@
 import axios from "axios";
+import { STORAGE_KEYS } from "../constants/storage";
 import type {
     Confirmacao,
     Convidado,
@@ -21,13 +22,14 @@ const API_BASE_URL =
 
 const api = axios.create({
     baseURL: API_BASE_URL,
+    timeout: 10000,
 });
 
 // Interceptor para adicionar o token de autenticação
 api.interceptors.request.use((config) => {
-    const adminPassword = localStorage.getItem("adminPassword");
-    if (adminPassword) {
-        config.headers.Authorization = `Bearer ${adminPassword}`;
+    const adminToken = localStorage.getItem(STORAGE_KEYS.ADMIN_TOKEN);
+    if (adminToken) {
+        config.headers.Authorization = `Bearer ${adminToken}`;
     }
     return config;
 });
@@ -154,6 +156,11 @@ export const confirmacoesApi = {
     deleteConfirmacao: async (id: number): Promise<void> => {
         await api.delete(`/admin/confirmacoes/${id}`);
     },
+
+    // Cancelar confirmação pelo código do convidado (público)
+    cancelarConfirmacao: async (codigoConvidado: string): Promise<void> => {
+        await api.delete(`/confirmacoes/${codigoConvidado}`);
+    },
 };
 
 // ========== ESTATÍSTICAS ==========
@@ -175,26 +182,14 @@ export const statsApi = {
 export const eventoApi = {
     // Obter informações do evento (público)
     getEventoInfo: async (): Promise<EventoInfo> => {
-        try {
-            const response = await api.get("/evento");
-            return response.data;
-        } catch (error) {
-            console.error("Erro ao obter informações do evento:", error);
-            throw error;
-        }
+        const response = await api.get("/evento");
+        return response.data;
     },
 
     // Atualizar informações do evento (admin)
-    updateEventoInfo: async (
-        info: UpdateEventoRequest
-    ): Promise<EventoInfo> => {
-        try {
-            const response = await api.put("/admin/evento", info);
-            return response.data;
-        } catch (error) {
-            console.error("Erro ao atualizar informações do evento:", error);
-            throw error;
-        }
+    updateEventoInfo: async (info: UpdateEventoRequest): Promise<EventoInfo> => {
+        const response = await api.put("/admin/evento", info);
+        return response.data;
     },
 };
 
@@ -242,6 +237,19 @@ export const convidadosApi = {
     regenerarCodigo: async (id: number): Promise<{ message: string; codigo: string }> => {
         const response = await api.post(`/admin/convidados/${id}/regenerar-codigo`);
         return response.data;
+    },
+};
+
+// ========== AUTH ==========
+export const authApi = {
+    // Verificar credenciais admin contra o backend
+    login: async (password: string): Promise<boolean> => {
+        try {
+            await api.post("/auth/login", { password });
+            return true;
+        } catch {
+            return false;
+        }
     },
 };
 

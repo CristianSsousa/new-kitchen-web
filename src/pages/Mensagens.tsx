@@ -8,26 +8,26 @@ import { useConvidado } from "../contexts/ConvidadoContext";
 // Função para gerar posições e tamanhos aleatórios para as mensagens
 const getRandomStyles = () => {
     const positions = [
-        "-rotate-2 translate-y-2",
+        "-rotate-1",
         "rotate-1",
-        "-rotate-1 -translate-y-2",
-        "rotate-2 translate-y-1",
-        "-rotate-3 translate-x-1",
-        "rotate-1 -translate-x-1",
+        "-rotate-[0.5deg]",
+        "rotate-[0.5deg]",
+        "-rotate-[1.5deg]",
+        "rotate-[1.5deg]",
     ];
 
     const sizes = [
-        "min-h-[200px]", // Tamanho padrão
-        "min-h-[250px]", // Um pouco maior
-        "min-h-[300px]", // Grande
-        "min-h-[180px]", // Um pouco menor
+        "min-h-[180px]",
+        "min-h-[200px]",
+        "min-h-[220px]",
+        "min-h-[200px]",
     ];
 
     const widths = [
-        "", // Largura padrão
-        "md:w-[120%]", // 20% mais largo
-        "md:w-[110%]", // 10% mais largo
-        "md:w-[90%]", // 10% mais estreito
+        "",
+        "",
+        "md:w-[105%]",
+        "md:w-[95%]",
     ];
 
     return {

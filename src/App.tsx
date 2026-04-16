@@ -1,18 +1,21 @@
 import { Toaster } from "react-hot-toast";
 import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
+import AppHeader from "./components/AppHeader";
 import ConvidadoRoute from "./components/ConvidadoRoute";
+import ErrorBoundary from "./components/ErrorBoundary";
 import Footer from "./components/Footer";
-import Navbar from "./components/Navbar";
 import PrivateRoute from "./components/PrivateRoute";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ConvidadoProvider } from "./contexts/ConvidadoContext";
 import Admin from "./pages/Admin";
 import Confirmacao from "./pages/Confirmacao";
 import ConvidadoLogin from "./pages/ConvidadoLogin";
+import Estatisticas from "./pages/Estatisticas";
 import Home from "./pages/Home";
 import ListaPresentes from "./pages/ListaPresentes";
 import Login from "./pages/Login";
 import Mensagens from "./pages/Mensagens";
+import NotFound from "./pages/NotFound";
 
 function App() {
     return (
@@ -51,11 +54,12 @@ function App() {
                         }}
                     />
 
-                    {/* Navbar */}
-                    <Navbar />
+                    {/* Header */}
+                    <AppHeader />
 
                     {/* Conteúdo principal */}
                     <main className="romantic-pattern">
+                        <ErrorBoundary>
                         <Routes>
                             <Route path="/" element={<Home />} />
                             <Route
@@ -93,14 +97,27 @@ function App() {
                                     </PrivateRoute>
                                 }
                             />
+                            <Route
+                                path="/estatisticas"
+                                element={
+                                    <ConvidadoRoute>
+                                        <Estatisticas />
+                                    </ConvidadoRoute>
+                                }
+                            />
+                            <Route path="*" element={<NotFound />} />
                         </Routes>
+                        </ErrorBoundary>
                     </main>
 
                     {/* Footer */}
                     <Footer />
 
                     {/* Efeitos decorativos flutuantes */}
-                    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+                    <div
+                        className="fixed inset-0 pointer-events-none z-0 overflow-hidden"
+                        aria-hidden="true"
+                    >
                         <div className="absolute top-20 left-10 w-6 h-6 text-primary-300 opacity-50 animate-float">
                             💕
                         </div>
