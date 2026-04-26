@@ -1,4 +1,4 @@
-import { Heart, Minus, Plus, Users } from "lucide-react";
+import { Heart, Minus, Plus, Users, X } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { confirmacoesApi } from "../services/api";
@@ -6,6 +6,7 @@ import { useConvidado } from "../contexts/ConvidadoContext";
 
 const Confirmacao = () => {
     const [loading, setLoading] = useState(false);
+    const [cancelling, setCancelling] = useState(false);
     const { convidado, stats, refreshStats } = useConvidado();
     const [formData, setFormData] = useState({
         quantidade_adultos: 1,
@@ -14,6 +15,20 @@ const Confirmacao = () => {
 
     // Verificar se o convidado já tem confirmação
     const jaTemConfirmacao = stats?.tem_confirmacao;
+
+    const handleCancelar = async () => {
+        if (!convidado) return;
+        try {
+            setCancelling(true);
+            await confirmacoesApi.cancelarConfirmacao(convidado.codigo_unico);
+            toast.success("Confirmação cancelada.");
+            await refreshStats();
+        } catch {
+            toast.error("Erro ao cancelar confirmação. Tente novamente.");
+        } finally {
+            setCancelling(false);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -67,7 +82,7 @@ const Confirmacao = () => {
 
                 {/* Formulário */}
                 <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-                    <div className="p-8">
+                    <div className="p-4 sm:p-8">
                         {jaTemConfirmacao && stats?.confirmacao ? (
                             <div className="text-center space-y-4">
                                 <div className="bg-green-50 rounded-xl p-6">
@@ -97,6 +112,18 @@ const Confirmacao = () => {
                                 <p className="text-gray-600">
                                     Mal podemos esperar para te ver no nosso evento! 💕
                                 </p>
+                                <button
+                                    onClick={handleCancelar}
+                                    disabled={cancelling}
+                                    className="mt-2 flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-red-600 border border-red-200 rounded-xl hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {cancelling ? (
+                                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-red-400 border-t-transparent mr-2" />
+                                    ) : (
+                                        <X className="h-4 w-4 mr-2" />
+                                    )}
+                                    {cancelling ? "Cancelando..." : "Cancelar confirmação"}
+                                </button>
                             </div>
                         ) : (
                             <form onSubmit={handleSubmit} className="space-y-8">

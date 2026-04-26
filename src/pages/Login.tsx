@@ -21,7 +21,7 @@ const Login = () => {
         setLoading(true);
 
         try {
-            const success = login(password);
+            const success = await login(password);
             if (success) {
                 toast.success("Login realizado com sucesso!");
             } else {

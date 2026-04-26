@@ -1,57 +1,57 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { STORAGE_KEYS } from "../constants/storage";
+import { authApi } from "../services/api";
 
 interface AuthState {
     isAuthenticated: boolean;
-    password: string | null;
+    token: string | null;
 }
 
 interface AuthContextData {
     isAuthenticated: boolean;
-    password: string | null;
-    login: (password: string) => boolean;
+    token: string | null;
+    login: (password: string) => Promise<boolean>;
     logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextData>({} as AuthContextData);
 
-const STORAGE_KEY = "adminPassword";
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     children,
 }) => {
     const [auth, setAuth] = useState<AuthState>(() => {
-        const storedPassword = localStorage.getItem(STORAGE_KEY);
+        const storedToken = localStorage.getItem(STORAGE_KEYS.ADMIN_TOKEN);
         return {
-            isAuthenticated: !!storedPassword,
-            password: storedPassword,
+            isAuthenticated: !!storedToken,
+            token: storedToken,
         };
     });
 
     useEffect(() => {
-        if (auth.password) {
-            localStorage.setItem(STORAGE_KEY, auth.password);
+        if (auth.token) {
+            localStorage.setItem(STORAGE_KEYS.ADMIN_TOKEN, auth.token);
         } else {
-            localStorage.removeItem(STORAGE_KEY);
+            localStorage.removeItem(STORAGE_KEYS.ADMIN_TOKEN);
         }
     }, [auth]);
 
-    const login = (password: string): boolean => {
-        if (password === "admin123") {
-            setAuth({ isAuthenticated: true, password });
-            return true;
+    const login = async (password: string): Promise<boolean> => {
+        const success = await authApi.login(password);
+        if (success) {
+            setAuth({ isAuthenticated: true, token: password });
         }
-        return false;
+        return success;
     };
 
     const logout = () => {
-        setAuth({ isAuthenticated: false, password: null });
+        setAuth({ isAuthenticated: false, token: null });
     };
 
     return (
         <AuthContext.Provider
             value={{
                 isAuthenticated: auth.isAuthenticated,
-                password: auth.password,
+                token: auth.token,
                 login,
                 logout,
             }}
@@ -63,10 +63,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
 export const useAuth = () => {
     const context = useContext(AuthContext);
-
     if (!context) {
         throw new Error("useAuth must be used within an AuthProvider");
     }
-
     return context;
 };

@@ -21,9 +21,7 @@ const EventoForm = () => {
     const loadEventoInfo = async () => {
         try {
             setLoading(true);
-            console.log("Carregando informações do evento...");
             const data = await eventoApi.getEventoInfo();
-            console.log("Informações do evento recebidas:", data);
             setFormData({
                 data: data.data || "",
                 horario: data.horario || "",
@@ -31,7 +29,6 @@ const EventoForm = () => {
                 local_maps_url: data.local_maps_url || "",
             });
         } catch (err) {
-            console.error("Erro ao carregar informações do evento:", err);
             toast.error("Erro ao carregar informações do evento");
         } finally {
             setLoading(false);
@@ -42,12 +39,9 @@ const EventoForm = () => {
         e.preventDefault();
         try {
             setSaving(true);
-            console.log("Enviando dados do evento:", formData);
             await eventoApi.updateEventoInfo(formData);
-            console.log("Informações do evento atualizadas com sucesso!");
             toast.success("Informações do evento atualizadas com sucesso!");
         } catch (err) {
-            console.error("Erro ao atualizar informações do evento:", err);
             toast.error("Erro ao atualizar informações do evento");
         } finally {
             setSaving(false);

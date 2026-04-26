@@ -1,16 +1,15 @@
-import { ExternalLink, Filter, Gift, Search, Star } from "lucide-react";
+import { ExternalLink, Filter, Gift, Loader2, Search, Star, X } from "lucide-react";
 import { useState } from "react";
-import toast from "react-hot-toast";
 import { useItems } from "../hooks/useItems";
 import { useConvidado } from "../contexts/ConvidadoContext";
 import { formatCurrency } from "../utils/format";
 
 const ListaPresentes = () => {
-    const { items, loading, resgatarItem, cancelarResgate, error } = useItems();
+    const { items, loading, resgatarItem, cancelarResgate, error, loadingItemId } = useItems();
     const { convidado, stats, refreshStats } = useConvidado();
     const [search, setSearch] = useState("");
     const [selectedCategory, setSelectedCategory] = useState<string>("Todos");
-    const [showResgatados, setShowResgatados] = useState(false);
+    const [filtroReservados, setFiltroReservados] = useState<"todos" | "disponiveis" | "reservados">("todos");
 
     const meusIds = stats?.itens_resgatados.map((it) => it.id) || [];
 
@@ -20,29 +19,34 @@ const ListaPresentes = () => {
         ...new Set(items?.map((item) => item.categoria)),
     ];
 
+    const normalize = (str: string) =>
+        str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
     // Filtrar itens
     const filteredItems = items?.filter((item) => {
-        const termo = search.toLowerCase();
+        const termo = normalize(search.trim());
         const matchesSearch =
-            (item.nome ?? "").toLowerCase().includes(termo) ||
-            (item.descricao ?? "").toLowerCase().includes(termo);
+            !termo ||
+            normalize(item.nome ?? "").includes(termo) ||
+            normalize(item.descricao ?? "").includes(termo);
         const matchesCategory =
             selectedCategory === "Todos" || item.categoria === selectedCategory;
-        const matchesResgatados = showResgatados
-            ? true // mostrar todos
-            : (!item.resgatado || meusIds.includes(item.id)); // sempre mostrar meus próprios reservados
+        const matchesResgatados =
+            filtroReservados === "todos" ? true :
+            filtroReservados === "disponiveis" ? !item.resgatado :
+            item.resgatado;
         return matchesSearch && matchesCategory && matchesResgatados;
     });
 
     // Função para resgatar presente
     const handleResgatar = async (id: number) => {
+        if (loadingItemId !== null) return;
+
         let nome: string;
-        
+
         if (convidado) {
-            // Se é um convidado logado, usar o nome dele
             nome = convidado.nome;
         } else {
-            // Se não é convidado logado, pedir o nome
             const inputNome = prompt(
                 "Por favor, digite seu nome para reservar este presente:"
             );
@@ -50,34 +54,23 @@ const ListaPresentes = () => {
             nome = inputNome;
         }
 
-        try {
-            await resgatarItem(id, { 
-                nome, 
-                codigo_convidado: convidado?.codigo_unico 
-            });
-            toast.success("Presente reservado com sucesso! 🎁");
-            
-            // Atualizar estatísticas se for convidado logado
-            if (convidado) {
-                await refreshStats();
-            }
-        } catch (err) {
-            toast.error("Erro ao reservar presente. Tente novamente.");
+        const success = await resgatarItem(id, {
+            nome,
+            codigo_convidado: convidado?.codigo_unico
+        });
+
+        if (success && convidado) {
+            await refreshStats();
         }
     };
 
     // Função para cancelar reserva
     const cancelarOwnResgate = async (id: number) => {
-        try {
-            await cancelarResgate(id);
-            toast.success("Reserva cancelada com sucesso! 🎁");
-            
-            // Atualizar estatísticas se for convidado logado
-            if (convidado) {
-                await refreshStats();
-            }
-        } catch (err) {
-            toast.error("Erro ao cancelar reserva. Tente novamente mais tarde.");
+        if (loadingItemId !== null) return;
+
+        const success = await cancelarResgate(id);
+        if (success && convidado) {
+            await refreshStats();
         }
     };
 
@@ -127,22 +120,23 @@ const ListaPresentes = () => {
                             ))}
                         </div>
 
-                        {/* Toggle Resgatados */}
-                        <button
-                            onClick={() => setShowResgatados(!showResgatados)}
-                            className={`flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                                showResgatados
-                                    ? "bg-secondary-500 text-white"
-                                    : "bg-white text-gray-600 hover:bg-gray-50"
-                            }`}
-                        >
-                            <Filter className="h-4 w-4" />
-                            <span>
-                                {showResgatados
-                                    ? "Mostrar Todos"
-                                    : "Mostrar Resgatados"}
-                            </span>
-                        </button>
+                        {/* Filtro de disponibilidade */}
+                        <div className="flex items-center gap-1 p-1 bg-white rounded-full border border-gray-200">
+                            <Filter className="h-4 w-4 text-gray-400 ml-2" />
+                            {(["todos", "disponiveis", "reservados"] as const).map((opcao) => (
+                                <button
+                                    key={opcao}
+                                    onClick={() => setFiltroReservados(opcao)}
+                                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
+                                        filtroReservados === opcao
+                                            ? "bg-secondary-500 text-white shadow-sm"
+                                            : "text-gray-600 hover:bg-gray-50"
+                                    }`}
+                                >
+                                    {opcao === "todos" ? "Todos" : opcao === "disponiveis" ? "Disponíveis" : "Reservados"}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
@@ -247,21 +241,28 @@ const ListaPresentes = () => {
                                         {/* Botão de Resgatar */}
                                         {!item.resgatado ? (
                                             <button
-                                                onClick={() =>
-                                                    handleResgatar(item.id)
-                                                }
-                                                className="w-full mt-4 bg-gradient-to-r from-primary-500 to-primary-600 text-white py-3 px-6 rounded-xl font-medium hover:from-primary-600 hover:to-primary-700 transition-all duration-200 flex items-center justify-center shadow-md hover:shadow-lg active:scale-[0.98]"
+                                                onClick={() => handleResgatar(item.id)}
+                                                disabled={loadingItemId !== null}
+                                                className="w-full mt-4 bg-gradient-to-r from-primary-500 to-primary-600 text-white py-3 px-6 rounded-xl font-medium hover:from-primary-600 hover:to-primary-700 transition-all duration-200 flex items-center justify-center shadow-md hover:shadow-lg active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
                                             >
-                                                <Gift className="h-5 w-5 mr-2" />
-                                                Reservar Presente
+                                                {loadingItemId === item.id ? (
+                                                    <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                                                ) : (
+                                                    <Gift className="h-5 w-5 mr-2" />
+                                                )}
+                                                {loadingItemId === item.id ? "Reservando..." : "Reservar Presente"}
                                             </button>
                                         ) : (
                                             meusIds.includes(item.id) && (
                                                 <button
                                                     onClick={() => cancelarOwnResgate(item.id)}
-                                                    className="w-full mt-4 bg-gradient-to-r from-green-600 to-green-700 text-white py-3 px-6 rounded-xl font-medium hover:from-green-700 hover:to-green-800 transition-all duration-200 flex items-center justify-center shadow-md hover:shadow-lg active:scale-[0.98]"
+                                                    disabled={loadingItemId !== null}
+                                                    className="w-full mt-4 bg-gradient-to-r from-green-600 to-green-700 text-white py-3 px-6 rounded-xl font-medium hover:from-green-700 hover:to-green-800 transition-all duration-200 flex items-center justify-center shadow-md hover:shadow-lg active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
                                                 >
-                                                    Cancelar Reserva
+                                                    {loadingItemId === item.id ? (
+                                                        <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                                                    ) : null}
+                                                    {loadingItemId === item.id ? "Cancelando..." : "Cancelar Reserva"}
                                                 </button>
                                             )
                                         )}
@@ -273,15 +274,33 @@ const ListaPresentes = () => {
                 )}
 
                 {/* Mensagem quando não há resultados */}
-                {filteredItems?.length === 0 && (
+                {!loading && filteredItems?.length === 0 && (
                     <div className="text-center py-12">
                         <Gift className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                         <h3 className="text-lg font-medium text-gray-900 mb-2">
                             Nenhum presente encontrado
                         </h3>
-                        <p className="text-gray-500">
-                            Tente ajustar seus filtros de busca
+                        <p className="text-gray-500 mb-4">
+                            {search && selectedCategory !== "Todos"
+                                ? `Nenhum resultado para "${search}" na categoria "${selectedCategory}"`
+                                : search
+                                ? `Nenhum resultado para "${search}"`
+                                : selectedCategory !== "Todos"
+                                ? `Nenhum presente na categoria "${selectedCategory}"`
+                                : "Nenhum presente disponível no momento"}
                         </p>
+                        {(search || selectedCategory !== "Todos") && (
+                            <button
+                                onClick={() => {
+                                    setSearch("");
+                                    setSelectedCategory("Todos");
+                                }}
+                                className="inline-flex items-center px-4 py-2 text-sm font-medium text-primary-600 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors"
+                            >
+                                <X className="h-4 w-4 mr-1.5" />
+                                Limpar filtros
+                            </button>
+                        )}
                     </div>
                 )}
             </div>

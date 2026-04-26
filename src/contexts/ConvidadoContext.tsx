@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import type { ConvidadoPublico, ConvidadoStats } from "../types";
 import { convidadosApi } from "../services/api";
+import { STORAGE_KEYS } from "../constants/storage";
 
 interface ConvidadoContextData {
     convidado: ConvidadoPublico | null;
@@ -9,6 +10,7 @@ interface ConvidadoContextData {
     error: string | null;
     setConvidadoByCodigo: (codigo: string) => Promise<boolean>;
     clearConvidado: () => void;
+    clearError: () => void;
     refreshStats: () => Promise<void>;
 }
 
@@ -35,14 +37,19 @@ export const ConvidadoProvider: React.FC<{ children: React.ReactNode }> = ({
             setStats(statsData);
             
             // Salvar no localStorage para persistir
-            localStorage.setItem("convidado_codigo", codigo);
+            localStorage.setItem(STORAGE_KEYS.CONVIDADO_CODIGO, codigo);
             
             return true;
-        } catch (err) {
-            setError("Convidado não encontrado");
+        } catch (err: unknown) {
+            const status = (err as { response?: { status?: number } })?.response?.status;
+            if (status === 404 || status === 401) {
+                setError("Código inválido ou expirado. Por favor, insira um novo código.");
+            } else {
+                setError("Não foi possível verificar o código. Verifique sua conexão e tente novamente.");
+            }
             setConvidado(null);
             setStats(null);
-            localStorage.removeItem("convidado_codigo");
+            localStorage.removeItem(STORAGE_KEYS.CONVIDADO_CODIGO);
             return false;
         } finally {
             setLoading(false);
@@ -54,8 +61,11 @@ export const ConvidadoProvider: React.FC<{ children: React.ReactNode }> = ({
         setConvidado(null);
         setStats(null);
         setError(null);
-        localStorage.removeItem("convidado_codigo");
+        localStorage.removeItem(STORAGE_KEYS.CONVIDADO_CODIGO);
     };
+
+    // Limpar apenas o erro
+    const clearError = () => setError(null);
 
     // Atualizar estatísticas
     const refreshStats = async () => {
@@ -71,7 +81,7 @@ export const ConvidadoProvider: React.FC<{ children: React.ReactNode }> = ({
 
     // Carregar convidado do localStorage na inicialização
     useEffect(() => {
-        const savedCodigo = localStorage.getItem("convidado_codigo");
+        const savedCodigo = localStorage.getItem(STORAGE_KEYS.CONVIDADO_CODIGO);
         if (savedCodigo) {
             setConvidadoByCodigo(savedCodigo).finally(() => {
                 // independentemente do resultado, loading será atualizado dentro da função
@@ -90,6 +100,7 @@ export const ConvidadoProvider: React.FC<{ children: React.ReactNode }> = ({
                 error,
                 setConvidadoByCodigo,
                 clearConvidado,
+                clearError,
                 refreshStats,
             }}
         >

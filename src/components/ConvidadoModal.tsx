@@ -1,5 +1,5 @@
 import { Copy, ExternalLink, Key, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import type { CreateConvidadoRequest, Convidado } from "../types";
 
@@ -24,6 +24,9 @@ const ConvidadoModal = ({
         telefone: "",
         observacoes: "",
     });
+    const [submitting, setSubmitting] = useState(false);
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+    const overlayRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (convidado) {
@@ -41,12 +44,34 @@ const ConvidadoModal = ({
                 observacoes: "",
             });
         }
+        setFieldErrors({});
     }, [convidado]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") onClose();
+        };
+        document.addEventListener("keydown", handleKeyDown);
+        return () => document.removeEventListener("keydown", handleKeyDown);
+    }, [isOpen, onClose]);
+
+    const validate = (): boolean => {
+        const errors: Record<string, string> = {};
+        if (!formData.nome.trim()) errors.nome = "Nome é obrigatório";
+        setFieldErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        await onSubmit(formData);
-        onClose();
+        if (!validate()) return;
+        try {
+            setSubmitting(true);
+            await onSubmit(formData);
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     const copyToClipboard = (text: string, label: string) => {
@@ -61,8 +86,14 @@ const ConvidadoModal = ({
     if (!isOpen) return null;
 
     return (
-        <div className="flex fixed inset-0 z-50 justify-center items-center p-4 backdrop-blur-sm bg-black/60">
-            <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl">
+        <div
+            ref={overlayRef}
+            className="flex fixed inset-0 z-50 justify-center items-center p-4 backdrop-blur-sm bg-black/60"
+            onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
+            role="dialog"
+            aria-modal="true"
+        >
+            <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
                 {/* Cabeçalho */}
                 <div className="flex justify-between items-center p-6 border-b border-gray-100">
                     <h2 className="font-serif text-2xl font-semibold text-gray-900">
@@ -71,6 +102,7 @@ const ConvidadoModal = ({
                     <button
                         onClick={onClose}
                         className="p-2 text-gray-400 rounded-lg transition-colors hover:text-gray-600 hover:bg-gray-100"
+                        aria-label="Fechar modal"
                     >
                         <X className="w-5 h-5" />
                     </button>
@@ -151,16 +183,16 @@ const ConvidadoModal = ({
                                 type="text"
                                 id="nome"
                                 value={formData.nome}
-                                onChange={(e) =>
-                                    setFormData({
-                                        ...formData,
-                                        nome: e.target.value,
-                                    })
-                                }
-                                className="input-field"
+                                onChange={(e) => {
+                                    setFormData({ ...formData, nome: e.target.value });
+                                    if (fieldErrors.nome) setFieldErrors((prev) => ({ ...prev, nome: "" }));
+                                }}
+                                className={`input-field ${fieldErrors.nome ? "border-red-400 focus:ring-red-300" : ""}`}
                                 placeholder="Ex: João Silva"
-                                required
                             />
+                            {fieldErrors.nome && (
+                                <p className="mt-1 text-xs text-red-500">{fieldErrors.nome}</p>
+                            )}
                         </div>
 
                         {/* Email */}
@@ -235,9 +267,10 @@ const ConvidadoModal = ({
                         </button>
                         <button
                             type="submit"
-                            className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors bg-primary-600 hover:bg-primary-700"
+                            disabled={submitting}
+                            className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors bg-primary-600 hover:bg-primary-700 disabled:opacity-60 disabled:cursor-not-allowed"
                         >
-                            {convidado ? "Salvar Alterações" : "Criar Convidado"}
+                            {submitting ? "Salvando..." : convidado ? "Salvar Alterações" : "Criar Convidado"}
                         </button>
                     </div>
                 </form>

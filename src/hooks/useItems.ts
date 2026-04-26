@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { itemsApi } from "../services/api";
 import type { CreateItemRequest, Item, ResgatarItemRequest } from "../types";
+import { handleApiError } from "../utils/errors";
 
 export const useItems = () => {
     const [items, setItems] = useState<Item[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [loadingItemId, setLoadingItemId] = useState<number | null>(null);
 
-    // Carregar itens
     const loadItems = async () => {
         try {
             setLoading(true);
@@ -16,53 +17,37 @@ export const useItems = () => {
             const data = await itemsApi.getPublicItems();
             setItems(data);
         } catch (err) {
-            const errorMessage =
-                err instanceof Error ? err.message : "Erro ao carregar itens";
-            setError(errorMessage);
-            toast.error(errorMessage);
+            const message = handleApiError(err, "Erro ao carregar itens");
+            setError(message);
         } finally {
             setLoading(false);
         }
     };
 
-    // Criar item
-    const createItem = async (
-        itemData: CreateItemRequest
-    ): Promise<boolean> => {
+    const createItem = async (itemData: CreateItemRequest): Promise<boolean> => {
         try {
             const newItem = await itemsApi.createItem(itemData);
             setItems((prev) => [newItem, ...prev]);
             toast.success("Item criado com sucesso! 🎉");
             return true;
         } catch (err) {
-            const errorMessage =
-                err instanceof Error ? err.message : "Erro ao criar item";
-            toast.error(errorMessage);
+            handleApiError(err, "Erro ao criar item");
             return false;
         }
     };
 
-    // Atualizar item
-    const updateItem = async (
-        id: number,
-        itemData: CreateItemRequest
-    ): Promise<boolean> => {
+    const updateItem = async (id: number, itemData: CreateItemRequest): Promise<boolean> => {
         try {
             const updatedItem = await itemsApi.updateItem(id, itemData);
-            setItems((prev) =>
-                prev.map((item) => (item.id === id ? updatedItem : item))
-            );
+            setItems((prev) => prev.map((item) => (item.id === id ? updatedItem : item)));
             toast.success("Item atualizado com sucesso! ✨");
             return true;
         } catch (err) {
-            const errorMessage =
-                err instanceof Error ? err.message : "Erro ao atualizar item";
-            toast.error(errorMessage);
+            handleApiError(err, "Erro ao atualizar item");
             return false;
         }
     };
 
-    // Deletar item
     const deleteItem = async (id: number): Promise<boolean> => {
         try {
             await itemsApi.deleteItem(id);
@@ -70,51 +55,41 @@ export const useItems = () => {
             toast.success("Item removido com sucesso! 🗑️");
             return true;
         } catch (err) {
-            const errorMessage =
-                err instanceof Error ? err.message : "Erro ao remover item";
-            toast.error(errorMessage);
+            handleApiError(err, "Erro ao remover item");
             return false;
         }
     };
 
-    // Resgatar item
-    const resgatarItem = async (
-        id: number,
-        request: ResgatarItemRequest
-    ): Promise<boolean> => {
+    const resgatarItem = async (id: number, request: ResgatarItemRequest): Promise<boolean> => {
         try {
+            setLoadingItemId(id);
             const updatedItem = await itemsApi.resgateItem(id, request);
-            setItems((prev) =>
-                prev.map((item) => (item.id === id ? updatedItem : item))
-            );
+            setItems((prev) => prev.map((item) => (item.id === id ? { ...item, ...updatedItem } : item)));
             toast.success("Item reservado com sucesso! 🎁");
             return true;
         } catch (err) {
-            const errorMessage =
-                err instanceof Error ? err.message : "Erro ao reservar item";
-            toast.error(errorMessage);
+            handleApiError(err, "Erro ao reservar item");
             return false;
+        } finally {
+            setLoadingItemId(null);
         }
     };
 
-    // Cancelar resgate
     const cancelarResgate = async (id: number): Promise<boolean> => {
         try {
+            setLoadingItemId(id);
             const updatedItem = await itemsApi.cancelaResgate(id);
-            setItems((prev) =>
-                prev.map((item) => (item.id === id ? updatedItem : item))
-            );
+            setItems((prev) => prev.map((item) => (item.id === id ? { ...item, ...updatedItem } : item)));
             toast.success("Reserva cancelada com sucesso! ↩️");
             return true;
         } catch (err) {
-            const errorMessage =
-                err instanceof Error ? err.message : "Erro ao cancelar reserva";
-            toast.error(errorMessage);
+            handleApiError(err, "Erro ao cancelar reserva");
             return false;
+        } finally {
+            setLoadingItemId(null);
         }
     };
 
-    // Carregar itens na inicialização
     useEffect(() => {
         loadItems();
     }, []);
@@ -123,6 +98,7 @@ export const useItems = () => {
         items,
         loading,
         error,
+        loadingItemId,
         loadItems,
         createItem,
         updateItem,
