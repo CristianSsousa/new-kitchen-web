@@ -1,4 +1,4 @@
-import { Calendar, Clock, MapPin } from "lucide-react";
+import { Calendar, Clock, Image, MapPin } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { eventoApi } from "../services/api";
@@ -12,6 +12,7 @@ const EventoForm = () => {
         horario: "",
         local: "",
         local_maps_url: "",
+        foto_casal_url: "",
     });
 
     useEffect(() => {
@@ -27,6 +28,7 @@ const EventoForm = () => {
                 horario: data.horario || "",
                 local: data.local || "",
                 local_maps_url: data.local_maps_url || "",
+                foto_casal_url: data.foto_casal_url || "",
             });
         } catch (err) {
             toast.error("Erro ao carregar informações do evento");
@@ -140,7 +142,10 @@ const EventoForm = () => {
                     htmlFor="local_maps_url"
                     className="block text-sm font-medium text-gray-700 mb-2"
                 >
-                    Link do Google Maps
+                    <div className="flex items-center space-x-2">
+                        <MapPin className="h-5 w-5 text-gray-400" />
+                        <span>Link do Google Maps</span>
+                    </div>
                 </label>
                 <input
                     type="url"
@@ -156,9 +161,45 @@ const EventoForm = () => {
                     placeholder="Cole aqui o link do Google Maps"
                 />
                 <p className="mt-1 text-sm text-gray-500">
-                    Opcional: Adicione um link do Google Maps para facilitar a
-                    localização
+                    Opcional: link para abrir no Google Maps
                 </p>
+            </div>
+
+            {/* Foto do Casal */}
+            <div>
+                <label
+                    htmlFor="foto_casal_url"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                    <div className="flex items-center space-x-2">
+                        <Image className="h-5 w-5 text-gray-400" />
+                        <span>Foto do Casal / Casa</span>
+                    </div>
+                </label>
+                <input
+                    type="url"
+                    id="foto_casal_url"
+                    value={formData.foto_casal_url}
+                    onChange={(e) =>
+                        setFormData({
+                            ...formData,
+                            foto_casal_url: e.target.value,
+                        })
+                    }
+                    className="input-field"
+                    placeholder="URL da foto (ex: https://...)"
+                />
+                <p className="mt-1 text-sm text-gray-500">
+                    Opcional: foto exibida no topo da página inicial
+                </p>
+                {formData.foto_casal_url && (
+                    <img
+                        src={formData.foto_casal_url}
+                        alt="Preview"
+                        className="mt-2 h-24 w-full object-cover rounded-lg border border-gray-200"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    />
+                )}
             </div>
 
             {/* Botão de Salvar */}

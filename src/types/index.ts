@@ -152,6 +152,7 @@ export interface EventoInfo {
     horario: string;
     local: string;
     local_maps_url?: string;
+    foto_casal_url?: string;
     updated_at: string;
 }
 
@@ -160,6 +161,7 @@ export interface UpdateEventoRequest {
     horario: string;
     local: string;
     local_maps_url?: string;
+    foto_casal_url?: string;
 }
 
 export interface Convidado {

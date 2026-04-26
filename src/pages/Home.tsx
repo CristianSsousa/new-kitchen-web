@@ -12,14 +12,48 @@ import { eventoApi } from "../services/api";
 import { useConvidado } from "../contexts/ConvidadoContext";
 import type { EventoInfo } from "../types";
 
+interface Countdown {
+    days: number;
+    hours: number;
+    minutes: number;
+    seconds: number;
+}
+
 const Home = () => {
     const [eventoInfo, setEventoInfo] = useState<EventoInfo | null>(null);
     const { convidado } = useConvidado();
     const [loading, setLoading] = useState(true);
+    const [countdown, setCountdown] = useState<Countdown | null>(null);
+    const [eventoPassou, setEventoPassou] = useState(false);
 
     useEffect(() => {
         loadEventoInfo();
     }, []);
+
+    useEffect(() => {
+        if (!eventoInfo?.data || !eventoInfo?.horario) return;
+
+        const eventDate = new Date(`${eventoInfo.data}T${eventoInfo.horario}`);
+
+        const update = () => {
+            const diff = eventDate.getTime() - Date.now();
+            if (diff <= 0) {
+                setEventoPassou(true);
+                setCountdown(null);
+                return;
+            }
+            setCountdown({
+                days: Math.floor(diff / 86400000),
+                hours: Math.floor((diff % 86400000) / 3600000),
+                minutes: Math.floor((diff % 3600000) / 60000),
+                seconds: Math.floor((diff % 60000) / 1000),
+            });
+        };
+
+        update();
+        const interval = setInterval(update, 1000);
+        return () => clearInterval(interval);
+    }, [eventoInfo]);
 
     const loadEventoInfo = async () => {
         try {
@@ -32,35 +66,69 @@ const Home = () => {
         }
     };
 
-    // Formatar data
-    const formatarData = (data: string) => {
-        return new Date(data).toLocaleDateString("pt-BR", {
+    const formatarData = (data: string) =>
+        new Date(data).toLocaleDateString("pt-BR", {
             day: "2-digit",
             month: "long",
             year: "numeric",
         });
-    };
 
-    // Formatar horário
     const formatarHorario = (horario: string) => {
         const [hora, minuto] = horario.split(":");
         return `${hora}h${minuto}`;
     };
 
+    const pad = (n: number) => String(n).padStart(2, "0");
+
+    const buildMapEmbedUrl = () => {
+        if (!eventoInfo) return null;
+        // Tenta extrair coordenadas do link do Google Maps (formato /@lat,lng)
+        const coordMatch = eventoInfo.local_maps_url?.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+        if (coordMatch) {
+            const [, lat, lng] = coordMatch;
+            return `https://maps.google.com/maps?ll=${lat},${lng}&q=${lat},${lng}&z=17&output=embed`;
+        }
+        // Fallback: busca pelo endereço
+        if (eventoInfo.local) {
+            return `https://maps.google.com/maps?q=${encodeURIComponent(eventoInfo.local)}&output=embed&z=16`;
+        }
+        return null;
+    };
+    const mapEmbedUrl = buildMapEmbedUrl();
+
     return (
         <div className="min-h-screen py-8">
+            {/* Hero Photo */}
+            {!loading && (
+                <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-4">
+                    <div className="flex flex-col items-center md:flex-row md:items-stretch gap-0 rounded-3xl overflow-hidden shadow-xl">
+                        {/* Foto — respeita proporção quadrada */}
+                        <div className="w-full md:w-1/2 aspect-square md:aspect-auto md:min-h-[420px] flex-shrink-0">
+                            <img
+                                src={eventoInfo?.foto_casal_url || "/foto-casal.jpg"}
+                                alt="Cristian & Flavia"
+                                className="w-full h-full object-cover object-center"
+                            />
+                        </div>
+                        {/* Painel lateral */}
+                        <div className="w-full md:w-1/2 bg-gradient-to-br from-primary-500 to-secondary-500 flex flex-col items-center justify-center px-8 py-10 text-white text-center">
+                            <p className="font-serif text-3xl md:text-4xl font-bold drop-shadow mb-3">
+                                Chá de Casa Nova
+                            </p>
+                            <p className="text-xl md:text-2xl opacity-90 font-script">
+                                Cristian & Flavia
+                            </p>
+                            <p className="text-3xl mt-2">💕</p>
+                        </div>
+                    </div>
+                </section>
+            )}
+
             {/* Hero Section */}
             <section className="relative overflow-hidden">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center py-20">
-                        {/* Título Principal */}
+                    <div className="text-center py-10">
                         <div className="space-y-4 mb-8">
-                            <h1 className="title-romantic animate-fadeIn">
-                                Chá de Casa Nova
-                            </h1>
-                            <p className="subtitle-romantic animate-slideUp">
-                                Cristian & Flavia
-                            </p>
                             <p className="text-lg text-gray-600 max-w-2xl mx-auto animate-slideUp">
                                 Estamos construindo nosso cantinho de amor e
                                 queremos compartilhar essa alegria com pessoas
@@ -68,8 +136,8 @@ const Home = () => {
                             </p>
                         </div>
 
-                        {/* Contador ou Data */}
-                        <div className="card-romantic max-w-md mx-auto p-6 mb-8 animate-slideUp">
+                        {/* Data + Countdown */}
+                        <div className="card-romantic max-w-lg mx-auto p-6 mb-8 animate-slideUp">
                             <div className="flex items-center justify-center space-x-2 mb-4">
                                 <Calendar className="h-5 w-5 text-romantic-gold" />
                                 <span className="font-serif text-lg font-medium">
@@ -77,17 +145,46 @@ const Home = () => {
                                 </span>
                             </div>
                             {loading ? (
-                                <div className="animate-pulse">
-                                    <div className="h-8 bg-gray-200 rounded w-48 mx-auto"></div>
+                                <div className="animate-pulse space-y-3">
+                                    <div className="h-8 bg-gray-200 rounded w-48 mx-auto" />
+                                    <div className="h-12 bg-gray-200 rounded w-full" />
                                 </div>
                             ) : convidado && eventoInfo?.data ? (
                                 <>
                                     <p className="text-2xl font-bold text-primary-600 font-serif">
                                         {formatarData(eventoInfo.data)}
                                     </p>
-                                    <p className="text-gray-600 mt-2">
+                                    <p className="text-gray-600 mt-1">
                                         às {formatarHorario(eventoInfo.horario)}
                                     </p>
+
+                                    {/* Countdown */}
+                                    {eventoPassou ? (
+                                        <p className="mt-4 text-primary-500 font-medium">
+                                            🎉 O evento já aconteceu!
+                                        </p>
+                                    ) : countdown ? (
+                                        <div className="mt-5 grid grid-cols-4 gap-2">
+                                            {[
+                                                { label: "Dias", value: countdown.days },
+                                                { label: "Horas", value: countdown.hours },
+                                                { label: "Min", value: countdown.minutes },
+                                                { label: "Seg", value: countdown.seconds },
+                                            ].map(({ label, value }) => (
+                                                <div
+                                                    key={label}
+                                                    className="bg-primary-50 rounded-xl py-2 px-1 text-center"
+                                                >
+                                                    <p className="text-2xl font-bold text-primary-600 font-mono tabular-nums">
+                                                        {pad(value)}
+                                                    </p>
+                                                    <p className="text-xs text-gray-500 mt-0.5">
+                                                        {label}
+                                                    </p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : null}
                                 </>
                             ) : (
                                 <>
@@ -121,7 +218,7 @@ const Home = () => {
                         </div>
                         <div className="mt-4 text-center">
                             <p className="text-sm text-gray-600 max-w-lg mx-auto">
-                                Para acessar a lista de presentes, mensagens e confirmação, 
+                                Para acessar a lista de presentes, mensagens e confirmação,
                                 você precisa inserir seu código de convidado.
                             </p>
                         </div>
@@ -143,8 +240,8 @@ const Home = () => {
                             </h3>
                             {loading ? (
                                 <div className="animate-pulse space-y-2">
-                                    <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto"></div>
-                                    <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
+                                    <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto" />
+                                    <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto" />
                                 </div>
                             ) : convidado && eventoInfo?.local ? (
                                 <>
@@ -182,7 +279,7 @@ const Home = () => {
                             </h3>
                             {loading ? (
                                 <div className="animate-pulse">
-                                    <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
+                                    <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto" />
                                 </div>
                             ) : convidado && eventoInfo?.horario ? (
                                 <p className="text-gray-600">
@@ -197,7 +294,7 @@ const Home = () => {
                             )}
                         </div>
 
-                        {/* Dress Code */}
+                        {/* Traje */}
                         <div className="card text-center p-6">
                             <div className="w-12 h-12 bg-romantic-gold/20 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <Heart className="h-6 w-6 text-romantic-gold" />
@@ -213,6 +310,29 @@ const Home = () => {
                     </div>
                 </div>
             </section>
+
+            {/* Mapa */}
+            {convidado && mapEmbedUrl && (
+                <section className="pb-16">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <h2 className="font-serif text-2xl font-bold text-center text-gray-900 mb-6">
+                            Como Chegar
+                        </h2>
+                        <div className="rounded-2xl overflow-hidden shadow-lg border border-gray-100">
+                            <iframe
+                                src={mapEmbedUrl}
+                                width="100%"
+                                height="360"
+                                style={{ border: 0 }}
+                                allowFullScreen
+                                loading="lazy"
+                                referrerPolicy="no-referrer-when-downgrade"
+                                title="Localização do evento"
+                            />
+                        </div>
+                    </div>
+                </section>
+            )}
 
             {/* Como Funciona */}
             <section className="py-16 bg-white/30">
@@ -248,7 +368,7 @@ const Home = () => {
                                 Resgate o Item
                             </h3>
                             <p className="text-gray-600">
-                                Clique em "Resgatar" e deixe seu nome para
+                                Clique em "Reservar" e deixe seu nome para
                                 reservar o presente
                             </p>
                         </div>

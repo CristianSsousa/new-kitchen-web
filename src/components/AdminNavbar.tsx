@@ -1,4 +1,4 @@
-import { Heart, LogOut, Menu, Shield, X } from "lucide-react";
+import { LogOut, Menu, Shield, X } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
@@ -8,35 +8,39 @@ const AdminNavbar = () => {
     const { logout } = useAuth();
 
     return (
-        <nav className="sticky top-0 z-50 border-b backdrop-blur-md bg-white/90 border-romantic-gold/20">
+        <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md shadow-sm">
+            {/* Borda gradiente no topo */}
+            <div className="h-0.5 bg-gradient-to-r from-primary-400 via-secondary-400 to-romantic-gold" />
+
             <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
-                <div className="flex justify-between h-16">
+                <div className="flex justify-between items-center h-16">
+
                     {/* Logo */}
-                    <div className="flex items-center">
-                        <Link to="/admin" className="flex items-center space-x-2 group">
-                            <div className="p-2 bg-gradient-to-r rounded-full transition-transform duration-200 from-primary-500 to-secondary-500 group-hover:scale-110">
-                                <Heart className="w-6 h-6 text-white" />
-                            </div>
-                            <div className="hidden sm:block">
-                                <h1 className="font-serif text-xl font-bold text-gradient">
-                                    Chá de Casa Nova
-                                </h1>
-                                <p className="-mt-1 text-sm font-script text-romantic-gold">
-                                    Cristian & Flavia
-                                </p>
-                            </div>
-                        </Link>
-                        <span className="ml-3 hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-700 border border-primary-200">
+                    <Link to="/admin" className="flex items-center gap-3 group flex-shrink-0">
+                        <img
+                            src="/favicon.svg"
+                            alt="Logo"
+                            className="w-9 h-9 transition-transform duration-300 group-hover:scale-110 drop-shadow"
+                        />
+                        <div className="leading-tight">
+                            <p className="font-serif text-lg font-bold text-gray-800 leading-none">
+                                Chá de Casa Nova
+                            </p>
+                            <p className="font-script text-sm text-primary-500 leading-tight">
+                                Cristian & Flavia
+                            </p>
+                        </div>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-700 border border-primary-200">
                             <Shield className="w-3 h-3" />
                             Admin
                         </span>
-                    </div>
+                    </Link>
 
                     {/* Desktop */}
                     <div className="hidden items-center lg:flex">
                         <button
                             onClick={logout}
-                            className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-500 rounded-full hover:text-red-500 hover:bg-red-50 transition-all duration-200"
+                            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-500 rounded-full hover:text-red-500 hover:bg-red-50 transition-colors"
                         >
                             <LogOut className="w-4 h-4" />
                             <span>Sair</span>
@@ -44,26 +48,23 @@ const AdminNavbar = () => {
                     </div>
 
                     {/* Mobile button */}
-                    <div className="flex items-center lg:hidden">
-                        <button
-                            onClick={() => setIsOpen(!isOpen)}
-                            className="p-2 text-gray-600 rounded-md transition-colors hover:text-primary-600 hover:bg-primary-50"
-                            aria-label={isOpen ? "Fechar menu" : "Abrir menu"}
-                            aria-expanded={isOpen}
-                        >
-                            {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-                        </button>
-                    </div>
+                    <button
+                        onClick={() => setIsOpen(!isOpen)}
+                        className="flex items-center justify-center w-9 h-9 rounded-full text-gray-600 hover:text-primary-600 hover:bg-primary-50 transition-colors lg:hidden"
+                        aria-label={isOpen ? "Fechar menu" : "Abrir menu"}
+                    >
+                        {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                    </button>
                 </div>
             </div>
 
             {/* Mobile menu */}
             {isOpen && (
-                <div className="border-t backdrop-blur-md lg:hidden bg-white/95 border-romantic-gold/20">
-                    <div className="px-2 pt-2 pb-3">
+                <div className="border-t border-gray-100 bg-white/95 backdrop-blur-md lg:hidden">
+                    <div className="px-4 py-3">
                         <button
-                            onClick={logout}
-                            className="flex items-center w-full px-3 py-2 space-x-3 text-sm font-medium text-gray-500 rounded-lg hover:text-red-500 hover:bg-red-50"
+                            onClick={() => { logout(); setIsOpen(false); }}
+                            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors"
                         >
                             <LogOut className="w-5 h-5" />
                             <span>Sair</span>

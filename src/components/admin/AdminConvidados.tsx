@@ -2,17 +2,20 @@ import {
     CheckCircle2,
     Copy,
     Edit2,
-    ExternalLink,
+    Link2,
     Loader2,
+    Mail,
+    MessageCircle,
     Plus,
     RefreshCw,
     Search,
+    Share2,
     Trash2,
     UserCheck,
     Users,
     X,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import ConvidadoModal from "../ConvidadoModal";
 import { useAdminConvidados } from "../../hooks/useAdminConvidados";
@@ -36,6 +39,8 @@ const AdminConvidados = () => {
     const [selectedConvidado, setSelectedConvidado] = useState<Convidado | undefined>(undefined);
     const [search, setSearch] = useState("");
     const [page, setPage] = useState(1);
+    const [shareMenuId, setShareMenuId] = useState<number | null>(null);
+    const shareMenuRef = useRef<HTMLDivElement>(null);
     const PER_PAGE = 10;
 
     const loadConfirmados = useCallback(async () => {
@@ -50,6 +55,18 @@ const AdminConvidados = () => {
     useEffect(() => {
         loadConfirmados();
     }, [loadConfirmados]);
+
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (shareMenuRef.current && !shareMenuRef.current.contains(e.target as Node)) {
+                setShareMenuId(null);
+            }
+        };
+        if (shareMenuId !== null) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [shareMenuId]);
 
     const handleSubmit = async (data: CreateConvidadoRequest) => {
         if (selectedConvidado) {
@@ -71,14 +88,42 @@ const AdminConvidados = () => {
         setIsModalOpen(true);
     };
 
+    const buildGuestLink = (codigo: string) =>
+        `${window.location.origin}/convidado/${codigo}`;
+
     const copyCode = (codigo: string) => {
         navigator.clipboard.writeText(codigo);
         toast.success("Código copiado!");
     };
 
     const copyLink = (codigo: string) => {
-        navigator.clipboard.writeText(`${window.location.origin}/convidado/${codigo}`);
+        navigator.clipboard.writeText(buildGuestLink(codigo));
         toast.success("Link copiado!");
+        setShareMenuId(null);
+    };
+
+    const shareWhatsApp = (convidado: Convidado) => {
+        const link = buildGuestLink(convidado.codigo_unico);
+        const nome = convidado.nome.split(" ")[0];
+        const msg = `Oi, ${nome}! 🎀 Que alegria ter você no nosso evento! Acesse pelo link abaixo para confirmar presença e dar uma espiadinha na lista de presentes 😍\n${link}\n\nMal podemos esperar para te ver! 💕`;
+        const phone = convidado.telefone?.replace(/\D/g, "");
+        const url = phone
+            ? `https://wa.me/55${phone}?text=${encodeURIComponent(msg)}`
+            : `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+        window.open(url, "_blank", "noopener,noreferrer");
+        setShareMenuId(null);
+    };
+
+    const shareEmail = (convidado: Convidado) => {
+        const link = buildGuestLink(convidado.codigo_unico);
+        const nome = convidado.nome.split(" ")[0];
+        const subject = encodeURIComponent("Seu acesso exclusivo ao nosso evento 💕");
+        const body = encodeURIComponent(
+            `Olá, ${nome}!\n\nAcesse sua área exclusiva do nosso evento pelo link abaixo:\n${link}\n\nCom ele você pode confirmar presença, ver a lista de presentes e deixar uma mensagem.\n\nAté breve! 🎉`
+        );
+        const to = convidado.email ? encodeURIComponent(convidado.email) : "";
+        window.open(`mailto:${to}?subject=${subject}&body=${body}`, "_self");
+        setShareMenuId(null);
     };
 
     const getInitials = (nome: string) =>
@@ -202,9 +247,9 @@ const AdminConvidados = () => {
                                     )}
                                 </div>
 
-                                {/* Código */}
+                                {/* Código + Compartilhar */}
                                 <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary-50 border border-primary-100">
-                                    <code className="flex-1 font-mono text-sm font-semibold text-primary-700 tracking-wide">
+                                    <code className="flex-1 font-mono text-sm font-semibold text-primary-700 tracking-wide truncate">
                                         {convidado.codigo_unico}
                                     </code>
                                     <button
@@ -214,13 +259,43 @@ const AdminConvidados = () => {
                                     >
                                         <Copy className="w-3.5 h-3.5" />
                                     </button>
-                                    <button
-                                        onClick={() => copyLink(convidado.codigo_unico)}
-                                        className="p-1 rounded-lg text-primary-500 hover:text-primary-700 hover:bg-primary-100 transition-colors"
-                                        title="Copiar link de acesso"
-                                    >
-                                        <ExternalLink className="w-3.5 h-3.5" />
-                                    </button>
+                                    {/* Botão compartilhar com dropdown */}
+                                    <div className="relative" ref={shareMenuId === convidado.id ? shareMenuRef : undefined}>
+                                        <button
+                                            onClick={() => setShareMenuId(shareMenuId === convidado.id ? null : convidado.id)}
+                                            className="p-1 rounded-lg text-primary-500 hover:text-primary-700 hover:bg-primary-100 transition-colors"
+                                            title="Compartilhar link de acesso"
+                                        >
+                                            <Share2 className="w-3.5 h-3.5" />
+                                        </button>
+                                        {shareMenuId === convidado.id && (
+                                            <div className="absolute right-0 top-7 z-20 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1 text-sm">
+                                                <button
+                                                    onClick={() => copyLink(convidado.codigo_unico)}
+                                                    className="flex items-center gap-2.5 w-full px-3 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
+                                                >
+                                                    <Link2 className="w-3.5 h-3.5 text-gray-400" />
+                                                    Copiar link
+                                                </button>
+                                                <button
+                                                    onClick={() => shareWhatsApp(convidado)}
+                                                    className="flex items-center gap-2.5 w-full px-3 py-2 text-gray-700 hover:bg-green-50 transition-colors"
+                                                >
+                                                    <MessageCircle className="w-3.5 h-3.5 text-green-500" />
+                                                    WhatsApp
+                                                </button>
+                                                {convidado.email && (
+                                                    <button
+                                                        onClick={() => shareEmail(convidado)}
+                                                        className="flex items-center gap-2.5 w-full px-3 py-2 text-gray-700 hover:bg-blue-50 transition-colors"
+                                                    >
+                                                        <Mail className="w-3.5 h-3.5 text-blue-500" />
+                                                        E-mail
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {/* Observações */}
