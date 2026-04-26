@@ -1,6 +1,5 @@
 import { Edit2, ExternalLink, Loader2, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
-import toast from "react-hot-toast";
 import ItemModal from "../ItemModal";
 import { useAdminItems } from "../../hooks/useAdminItems";
 import type { CreateItemRequest, Item } from "../../types";
