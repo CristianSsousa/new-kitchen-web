@@ -1,7 +1,7 @@
 import {
+    CheckSquare,
     Copy,
     Gift,
-    Heart,
     Home,
     LogOut,
     Menu,
@@ -23,9 +23,9 @@ const Navbar = () => {
 
     const guestNavigation = [
         { name: "Início", href: "/", icon: Home },
-        { name: "Lista de Presentes", href: "/lista-presentes", icon: Gift },
+        { name: "Presentes", href: "/lista-presentes", icon: Gift },
         { name: "Mensagens", href: "/mensagens", icon: MessageCircle },
-        { name: "Confirmação", href: "/confirmacao", icon: Users },
+        { name: "Confirmação", href: "/confirmacao", icon: CheckSquare },
     ];
 
     const publicNavigation = [
@@ -33,62 +33,42 @@ const Navbar = () => {
     ];
 
     const navigation = convidado ? guestNavigation : publicNavigation;
-
     const isActive = (path: string) => location.pathname === path;
 
     return (
-        <nav className="sticky top-0 z-50 border-b backdrop-blur-md bg-white/90 border-romantic-gold/20">
+        <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md shadow-sm">
+            {/* Borda gradiente no topo */}
+            <div className="h-0.5 bg-gradient-to-r from-primary-400 via-secondary-400 to-romantic-gold" />
+
             <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
-                <div className="flex justify-between h-16">
+                <div className="flex justify-between items-center h-16">
+
                     {/* Logo */}
-                    <div className="flex items-center">
-                        <Link to="/" className="flex items-center space-x-2 group">
-                            <div className="p-2 bg-gradient-to-r rounded-full transition-transform duration-200 from-primary-500 to-secondary-500 group-hover:scale-110">
-                                <Heart className="w-6 h-6 text-white" />
-                            </div>
-                            <div className="hidden sm:block">
-                                <h1 className="font-serif text-xl font-bold text-gradient">
-                                    Chá de Casa Nova
-                                </h1>
-                                <p className="-mt-1 text-sm font-script text-romantic-gold">
-                                    Cristian & Flavia
-                                </p>
-                            </div>
-                        </Link>
-                    </div>
+                    <Link to="/" className="flex items-center gap-3 group flex-shrink-0">
+                        <img
+                            src="/favicon.svg"
+                            alt="Logo"
+                            className="w-9 h-9 transition-transform duration-300 group-hover:scale-110 drop-shadow"
+                        />
+                        <div className="leading-tight">
+                            <p className="font-serif text-lg font-bold text-gray-800 leading-none">
+                                Chá de Casa Nova
+                            </p>
+                            <p className="font-script text-sm text-primary-500 leading-tight">
+                                Cristian & Flavia
+                            </p>
+                        </div>
+                    </Link>
 
-                    {/* Desktop */}
-                    <div className="hidden items-center space-x-4 lg:flex">
-                        {convidado && (
-                            <button
-                                title="Clique para copiar seu código"
-                                onClick={() => {
-                                    navigator.clipboard.writeText(convidado.codigo_unico);
-                                    toast.success("Código copiado!");
-                                }}
-                                className="flex items-center py-1.5 pr-3 pl-2 rounded-full transition-colors bg-primary-50 hover:bg-primary-100 group cursor-pointer"
-                                aria-label="Copiar código de convidado"
-                            >
-                                <div className="flex justify-center items-center mr-2 w-7 h-7 text-xs font-semibold text-white bg-gradient-to-r rounded-full shadow from-primary-500 to-secondary-500">
-                                    {firstName.charAt(0)}
-                                </div>
-                                <span className="mr-2 text-sm font-medium text-primary-700">
-                                    {firstName}
-                                </span>
-                                <code className="px-2 py-0.5 font-mono text-xs bg-white rounded border border-primary-200 text-primary-700 group-hover:bg-primary-50">
-                                    {convidado.codigo_unico}
-                                </code>
-                                <Copy className="ml-1.5 w-3.5 h-3.5 text-primary-400 group-hover:text-primary-600 transition-colors" />
-                            </button>
-                        )}
-
+                    {/* Desktop nav */}
+                    <div className="hidden items-center gap-1 lg:flex">
                         {navigation.map(({ name, href, icon: Icon }) => (
                             <Link
                                 key={name}
                                 to={href}
-                                className={`flex items-center space-x-2 px-3 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                                className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                                     isActive(href)
-                                        ? "bg-primary-100 text-primary-700 shadow-sm"
+                                        ? "bg-gradient-to-r from-primary-500 to-secondary-500 text-white shadow-sm"
                                         : "text-gray-600 hover:text-primary-600 hover:bg-primary-50"
                                 }`}
                             >
@@ -97,18 +77,42 @@ const Navbar = () => {
                             </Link>
                         ))}
 
+                        <div className="mx-2 h-6 w-px bg-gray-200" />
+
                         {convidado ? (
-                            <button
-                                onClick={clearConvidado}
-                                className="flex items-center px-3 py-2 space-x-2 text-sm font-medium text-gray-600 rounded-full hover:text-red-500"
-                            >
-                                <LogOut className="w-4 h-4" />
-                                <span>Sair</span>
-                            </button>
+                            <div className="flex items-center gap-2">
+                                {/* Badge do convidado */}
+                                <button
+                                    title="Clique para copiar seu código"
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(convidado.codigo_unico);
+                                        toast.success("Código copiado!");
+                                    }}
+                                    className="flex items-center gap-2 py-1.5 pl-1.5 pr-3 rounded-full bg-primary-50 hover:bg-primary-100 transition-colors group cursor-pointer"
+                                >
+                                    <div className="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-primary-500 to-secondary-500 text-white text-xs font-bold shadow-sm">
+                                        {firstName.charAt(0)}
+                                    </div>
+                                    <span className="text-sm font-medium text-primary-700">{firstName}</span>
+                                    <code className="px-1.5 py-0.5 font-mono text-xs bg-white rounded border border-primary-100 text-primary-600 group-hover:border-primary-300 transition-colors">
+                                        {convidado.codigo_unico}
+                                    </code>
+                                    <Copy className="w-3 h-3 text-primary-300 group-hover:text-primary-500 transition-colors" />
+                                </button>
+
+                                <button
+                                    onClick={clearConvidado}
+                                    title="Sair"
+                                    className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-500 rounded-full hover:text-red-500 hover:bg-red-50 transition-colors"
+                                >
+                                    <LogOut className="w-4 h-4" />
+                                    <span>Sair</span>
+                                </button>
+                            </div>
                         ) : (
                             <Link
                                 to="/convidado"
-                                className="flex items-center px-3 py-2 space-x-2 text-sm font-medium rounded-full text-primary-600 hover:text-primary-700 hover:bg-primary-50"
+                                className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white rounded-full bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600 shadow-sm transition-all hover:shadow-md"
                             >
                                 <Users className="w-4 h-4" />
                                 <span>Área do Convidado</span>
@@ -117,31 +121,28 @@ const Navbar = () => {
                     </div>
 
                     {/* Mobile button */}
-                    <div className="flex items-center lg:hidden">
-                        <button
-                            onClick={() => setIsOpen(!isOpen)}
-                            className="p-2 text-gray-600 rounded-md transition-colors duration-200 hover:text-primary-600 hover:bg-primary-50"
-                            aria-label={isOpen ? "Fechar menu" : "Abrir menu"}
-                            aria-expanded={isOpen}
-                        >
-                            {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-                        </button>
-                    </div>
+                    <button
+                        onClick={() => setIsOpen(!isOpen)}
+                        className="flex items-center justify-center w-9 h-9 rounded-full text-gray-600 hover:text-primary-600 hover:bg-primary-50 transition-colors lg:hidden"
+                        aria-label={isOpen ? "Fechar menu" : "Abrir menu"}
+                    >
+                        {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                    </button>
                 </div>
             </div>
 
             {/* Mobile menu */}
             {isOpen && (
-                <div className="border-t backdrop-blur-md lg:hidden bg-white/95 border-romantic-gold/20">
-                    <div className="px-2 pt-2 pb-3 space-y-1">
+                <div className="border-t border-gray-100 bg-white/95 backdrop-blur-md lg:hidden">
+                    <div className="px-4 py-3 space-y-1">
                         {navigation.map(({ name, href, icon: Icon }) => (
                             <Link
                                 key={name}
                                 to={href}
                                 onClick={() => setIsOpen(false)}
-                                className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                                     isActive(href)
-                                        ? "bg-primary-100 text-primary-700"
+                                        ? "bg-gradient-to-r from-primary-500 to-secondary-500 text-white shadow-sm"
                                         : "text-gray-600 hover:text-primary-600 hover:bg-primary-50"
                                 }`}
                             >
@@ -150,43 +151,44 @@ const Navbar = () => {
                             </Link>
                         ))}
 
-                        {convidado ? (
-                            <>
-                                <button
-                                    onClick={() => {
-                                        navigator.clipboard.writeText(convidado.codigo_unico);
-                                        toast.success("Código copiado!");
-                                    }}
-                                    className="flex items-center w-full px-3 py-2 rounded-lg transition transform bg-primary-50 active:scale-95"
-                                    aria-label="Copiar código de convidado"
+                        <div className="pt-1 border-t border-gray-100 mt-1">
+                            {convidado ? (
+                                <>
+                                    <button
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(convidado.codigo_unico);
+                                            toast.success("Código copiado!");
+                                        }}
+                                        className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl bg-primary-50 hover:bg-primary-100 transition-colors"
+                                    >
+                                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-secondary-500 text-white text-sm font-bold">
+                                            {firstName.charAt(0)}
+                                        </div>
+                                        <div className="text-left">
+                                            <p className="text-sm font-medium text-primary-700">Olá, {firstName}!</p>
+                                            <p className="text-xs font-mono text-primary-500">{convidado.codigo_unico}</p>
+                                        </div>
+                                        <Copy className="w-4 h-4 text-primary-400 ml-auto" />
+                                    </button>
+                                    <button
+                                        onClick={() => { clearConvidado(); setIsOpen(false); }}
+                                        className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors mt-1"
+                                    >
+                                        <LogOut className="w-5 h-5" />
+                                        <span>Sair</span>
+                                    </button>
+                                </>
+                            ) : (
+                                <Link
+                                    to="/convidado"
+                                    onClick={() => setIsOpen(false)}
+                                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white bg-gradient-to-r from-primary-500 to-secondary-500"
                                 >
-                                    <span className="text-sm font-medium text-primary-700">
-                                        Olá, {firstName}!
-                                    </span>
-                                    <code className="ml-2 text-xs font-mono px-1.5 py-0.5 rounded bg-white border border-primary-200 text-primary-700">
-                                        {convidado.codigo_unico}
-                                    </code>
-                                    <Copy className="ml-1.5 w-3.5 h-3.5 text-primary-400" />
-                                </button>
-                                <button
-                                    onClick={() => { clearConvidado(); setIsOpen(false); }}
-                                    className="flex items-center px-3 py-2 space-x-3 text-sm font-medium text-gray-600 rounded-lg hover:text-red-500"
-                                    aria-label="Sair da área do convidado"
-                                >
-                                    <LogOut className="w-5 h-5" />
-                                    <span>Sair</span>
-                                </button>
-                            </>
-                        ) : (
-                            <Link
-                                to="/convidado"
-                                onClick={() => setIsOpen(false)}
-                                className="flex items-center px-3 py-2 space-x-3 text-sm font-medium rounded-lg text-primary-600 hover:text-primary-700 hover:bg-primary-50"
-                            >
-                                <Users className="w-5 h-5" />
-                                <span>Área do Convidado</span>
-                            </Link>
-                        )}
+                                    <Users className="w-5 h-5" />
+                                    <span>Área do Convidado</span>
+                                </Link>
+                            )}
+                        </div>
                     </div>
                 </div>
             )}

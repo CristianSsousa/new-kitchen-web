@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Fundo arredondado -->
+  <rect width="64" height="64" rx="14" fill="#ec4899"/>
+
+  <!-- Casinha -->
+  <polygon points="32,10 10,30 16,30 16,54 48,54 48,30 54,30" fill="white" opacity="0.95"/>
+
+  <!-- Coração dentro da casa -->
+  <path d="M32 43 C32 43 20 35 20 28 C20 24 23.5 21 27 21 C29 21 31 22.5 32 24 C33 22.5 35 21 37 21 C40.5 21 44 24 44 28 C44 35 32 43 32 43Z" fill="#ec4899"/>
+</svg>
