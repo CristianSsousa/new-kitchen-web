@@ -4,6 +4,7 @@ import {
     ExternalLink,
     Gift,
     Heart,
+    Lock,
     MapPin,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -128,190 +129,172 @@ const Home = () => {
             <section className="relative overflow-hidden">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center py-10">
-                        <div className="space-y-4 mb-8">
-                            <p className="text-lg text-gray-600 max-w-2xl mx-auto animate-slideUp">
-                                Estamos construindo nosso cantinho de amor e
-                                queremos compartilhar essa alegria com pessoas
-                                especiais como você! 💕
-                            </p>
-                        </div>
+                        <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-8 animate-slideUp">
+                            Estamos construindo nosso cantinho de amor e
+                            queremos compartilhar essa alegria com pessoas
+                            especiais como você! 💕
+                        </p>
 
-                        {/* Data + Countdown */}
-                        <div className="card-romantic max-w-lg mx-auto p-6 mb-8 animate-slideUp">
-                            <div className="flex items-center justify-center space-x-2 mb-4">
-                                <Calendar className="h-5 w-5 text-romantic-gold" />
-                                <span className="font-serif text-lg font-medium">
-                                    Data do Evento
-                                </span>
-                            </div>
-                            {loading ? (
-                                <div className="animate-pulse space-y-3">
-                                    <div className="h-8 bg-gray-200 rounded w-48 mx-auto" />
-                                    <div className="h-12 bg-gray-200 rounded w-full" />
-                                </div>
-                            ) : convidado && eventoInfo?.data ? (
-                                <>
-                                    <p className="text-2xl font-bold text-primary-600 font-serif">
-                                        {formatarData(eventoInfo.data)}
-                                    </p>
-                                    <p className="text-gray-600 mt-1">
-                                        às {formatarHorario(eventoInfo.horario)}
-                                    </p>
-
-                                    {/* Countdown */}
-                                    {eventoPassou ? (
-                                        <p className="mt-4 text-primary-500 font-medium">
-                                            🎉 O evento já aconteceu!
-                                        </p>
-                                    ) : countdown ? (
-                                        <div className="mt-5 grid grid-cols-4 gap-2">
-                                            {[
-                                                { label: "Dias", value: countdown.days },
-                                                { label: "Horas", value: countdown.hours },
-                                                { label: "Min", value: countdown.minutes },
-                                                { label: "Seg", value: countdown.seconds },
-                                            ].map(({ label, value }) => (
-                                                <div
-                                                    key={label}
-                                                    className="bg-primary-50 rounded-xl py-2 px-1 text-center"
-                                                >
-                                                    <p className="text-2xl font-bold text-primary-600 font-mono tabular-nums">
-                                                        {pad(value)}
-                                                    </p>
-                                                    <p className="text-xs text-gray-500 mt-0.5">
-                                                        {label}
-                                                    </p>
-                                                </div>
-                                            ))}
+                        {convidado ? (
+                            /* ── Convidado logado: mostra tudo ── */
+                            <>
+                                {/* Data + Countdown */}
+                                <div className="card-romantic max-w-lg mx-auto p-6 mb-8 animate-slideUp">
+                                    <div className="flex items-center justify-center space-x-2 mb-4">
+                                        <Calendar className="h-5 w-5 text-romantic-gold" />
+                                        <span className="font-serif text-lg font-medium">
+                                            Data do Evento
+                                        </span>
+                                    </div>
+                                    {loading ? (
+                                        <div className="animate-pulse space-y-3">
+                                            <div className="h-8 bg-gray-200 rounded w-48 mx-auto" />
+                                            <div className="h-12 bg-gray-200 rounded w-full" />
                                         </div>
+                                    ) : eventoInfo?.data ? (
+                                        <>
+                                            <p className="text-2xl font-bold text-primary-600 font-serif">
+                                                {formatarData(eventoInfo.data)}
+                                            </p>
+                                            <p className="text-gray-600 mt-1">
+                                                às {formatarHorario(eventoInfo.horario)}
+                                            </p>
+                                            {eventoPassou ? (
+                                                <p className="mt-4 text-primary-500 font-medium">
+                                                    🎉 O evento já aconteceu!
+                                                </p>
+                                            ) : countdown ? (
+                                                <div className="mt-5 grid grid-cols-4 gap-2">
+                                                    {[
+                                                        { label: "Dias", value: countdown.days },
+                                                        { label: "Horas", value: countdown.hours },
+                                                        { label: "Min", value: countdown.minutes },
+                                                        { label: "Seg", value: countdown.seconds },
+                                                    ].map(({ label, value }) => (
+                                                        <div key={label} className="bg-primary-50 rounded-xl py-2 px-1 text-center">
+                                                            <p className="text-2xl font-bold text-primary-600 font-mono tabular-nums">
+                                                                {pad(value)}
+                                                            </p>
+                                                            <p className="text-xs text-gray-500 mt-0.5">{label}</p>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : null}
+                                        </>
                                     ) : null}
-                                </>
-                            ) : (
-                                <>
-                                    <p className="text-2xl font-bold text-primary-600 font-serif">
-                                        Em Breve!
-                                    </p>
-                                    <p className="text-gray-600 mt-2">
-                                        Aguarde mais informações sobre quando
-                                        será nossa celebração
-                                    </p>
-                                </>
-                            )}
-                        </div>
+                                </div>
 
-                        {/* Call to Actions */}
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slideUp">
-                            <Link
-                                to="/convidado"
-                                className="btn-primary inline-flex items-center space-x-2"
-                            >
-                                <Gift className="h-5 w-5" />
-                                <span>Área do Convidado</span>
-                            </Link>
-                            <Link
-                                to="/convidado"
-                                className="btn-secondary inline-flex items-center space-x-2"
-                            >
-                                <Heart className="h-5 w-5" />
-                                <span>Acessar com Código</span>
-                            </Link>
-                        </div>
-                        <div className="mt-4 text-center">
-                            <p className="text-sm text-gray-600 max-w-lg mx-auto">
-                                Para acessar a lista de presentes, mensagens e confirmação,
-                                você precisa inserir seu código de convidado.
-                            </p>
-                        </div>
+                                {/* Links para área do convidado */}
+                                <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slideUp">
+                                    <Link to="/lista-presentes" className="btn-primary inline-flex items-center space-x-2">
+                                        <Gift className="h-5 w-5" />
+                                        <span>Ver Lista de Presentes</span>
+                                    </Link>
+                                    <Link to="/confirmacao" className="btn-secondary inline-flex items-center space-x-2">
+                                        <Heart className="h-5 w-5" />
+                                        <span>Confirmar Presença</span>
+                                    </Link>
+                                </div>
+                            </>
+                        ) : (
+                            /* ── Sem código: convite para entrar ── */
+                            <div className="max-w-md mx-auto animate-slideUp">
+                                <div className="card p-8 text-center space-y-4">
+                                    <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-gray-100 mx-auto">
+                                        <Lock className="h-6 w-6 text-gray-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-serif text-lg font-semibold text-gray-800 mb-1">
+                                            Conteúdo exclusivo para convidados
+                                        </h3>
+                                        <p className="text-sm text-gray-500">
+                                            Insira seu código para ver a data, local, horário e lista de presentes.
+                                        </p>
+                                    </div>
+                                    <Link
+                                        to="/convidado"
+                                        className="btn-primary inline-flex items-center justify-center space-x-2 w-full"
+                                    >
+                                        <Gift className="h-5 w-5" />
+                                        <span>Acessar com meu código</span>
+                                    </Link>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </section>
 
-            {/* Informações do Evento */}
-            <section className="py-16">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="grid md:grid-cols-3 gap-8">
-                        {/* Localização */}
-                        <div className="card text-center p-6">
-                            <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <MapPin className="h-6 w-6 text-primary-600" />
-                            </div>
-                            <h3 className="font-serif text-xl font-semibold mb-2">
-                                Local
-                            </h3>
-                            {loading ? (
-                                <div className="animate-pulse space-y-2">
-                                    <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto" />
-                                    <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto" />
+            {/* Informações do Evento — só para convidados logados */}
+            {convidado && (
+                <section className="py-16">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="grid md:grid-cols-3 gap-8">
+                            {/* Localização */}
+                            <div className="card text-center p-6">
+                                <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <MapPin className="h-6 w-6 text-primary-600" />
                                 </div>
-                            ) : convidado && eventoInfo?.local ? (
-                                <>
-                                    <p className="text-gray-600 whitespace-pre-line">
-                                        {eventoInfo.local}
-                                    </p>
-                                    {eventoInfo.local_maps_url && (
-                                        <a
-                                            href={eventoInfo.local_maps_url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-sm text-primary-600 hover:text-primary-700 inline-flex items-center mt-2"
-                                        >
-                                            <ExternalLink className="h-4 w-4 mr-1" />
-                                            Ver no Google Maps
-                                        </a>
-                                    )}
-                                </>
-                            ) : (
-                                <p className="text-gray-600">
-                                    Informações do local
-                                    <br />
-                                    serão divulgadas em breve
-                                </p>
-                            )}
-                        </div>
-
-                        {/* Horário */}
-                        <div className="card text-center p-6">
-                            <div className="w-12 h-12 bg-secondary-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <Clock className="h-6 w-6 text-secondary-600" />
+                                <h3 className="font-serif text-xl font-semibold mb-2">Local</h3>
+                                {loading ? (
+                                    <div className="animate-pulse space-y-2">
+                                        <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto" />
+                                        <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto" />
+                                    </div>
+                                ) : eventoInfo?.local ? (
+                                    <>
+                                        <p className="text-gray-600 whitespace-pre-line">{eventoInfo.local}</p>
+                                        {eventoInfo.local_maps_url && (
+                                            <a
+                                                href={eventoInfo.local_maps_url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-sm text-primary-600 hover:text-primary-700 inline-flex items-center mt-2"
+                                            >
+                                                <ExternalLink className="h-4 w-4 mr-1" />
+                                                Ver no Google Maps
+                                            </a>
+                                        )}
+                                    </>
+                                ) : (
+                                    <p className="text-gray-400 text-sm">Não informado</p>
+                                )}
                             </div>
-                            <h3 className="font-serif text-xl font-semibold mb-2">
-                                Horário
-                            </h3>
-                            {loading ? (
-                                <div className="animate-pulse">
-                                    <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto" />
+
+                            {/* Horário */}
+                            <div className="card text-center p-6">
+                                <div className="w-12 h-12 bg-secondary-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <Clock className="h-6 w-6 text-secondary-600" />
                                 </div>
-                            ) : convidado && eventoInfo?.horario ? (
-                                <p className="text-gray-600">
-                                    {formatarHorario(eventoInfo.horario)}
-                                </p>
-                            ) : (
-                                <p className="text-gray-600">
-                                    A definir
-                                    <br />
-                                    Aguarde mais informações
-                                </p>
-                            )}
-                        </div>
-
-                        {/* Traje */}
-                        <div className="card text-center p-6">
-                            <div className="w-12 h-12 bg-romantic-gold/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <Heart className="h-6 w-6 text-romantic-gold" />
+                                <h3 className="font-serif text-xl font-semibold mb-2">Horário</h3>
+                                {loading ? (
+                                    <div className="animate-pulse">
+                                        <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto" />
+                                    </div>
+                                ) : eventoInfo?.horario ? (
+                                    <p className="text-gray-600">{formatarHorario(eventoInfo.horario)}</p>
+                                ) : (
+                                    <p className="text-gray-400 text-sm">Não informado</p>
+                                )}
                             </div>
-                            <h3 className="font-serif text-xl font-semibold mb-2">
-                                Traje
-                            </h3>
-                            <p className="text-gray-600">
-                                Venha confortável
-                                <br />e com muito amor! 💕
-                            </p>
+
+                            {/* Traje */}
+                            <div className="card text-center p-6">
+                                <div className="w-12 h-12 bg-romantic-gold/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <Heart className="h-6 w-6 text-romantic-gold" />
+                                </div>
+                                <h3 className="font-serif text-xl font-semibold mb-2">Traje</h3>
+                                <p className="text-gray-600">
+                                    Venha confortável
+                                    <br />e com muito amor! 💕
+                                </p>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </section>
+                </section>
+            )}
 
-            {/* Mapa */}
+            {/* Mapa — só para convidados logados */}
             {convidado && mapEmbedUrl && (
                 <section className="pb-16">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
