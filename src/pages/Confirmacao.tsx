@@ -38,6 +38,7 @@ const Counter = ({
 const Confirmacao = () => {
     const [loading, setLoading] = useState(false);
     const [cancelling, setCancelling] = useState(false);
+    const [showModal, setShowModal] = useState(false);
     const { convidado, stats, refreshStats } = useConvidado();
     const [formData, setFormData] = useState({
         quantidade_adultos: 1,
@@ -61,8 +62,7 @@ const Confirmacao = () => {
         }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleConfirmar = async () => {
         try {
             setLoading(true);
             await confirmacoesApi.createConfirmacao({
@@ -70,6 +70,7 @@ const Confirmacao = () => {
                 codigo_convidado: convidado?.codigo_unico,
             });
             toast.success("Que alegria! Sua presença foi confirmada! 🎉");
+            setShowModal(false);
             if (convidado) {
                 await refreshStats();
             } else {
@@ -102,136 +103,190 @@ const Confirmacao = () => {
                 </div>
 
                 {jaTemConfirmacao && stats?.confirmacao ? (
-                    /* ── Estado: já confirmado ── */
+                    /* ── Já confirmado ── */
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                        {/* Banner verde */}
                         <div className="bg-gradient-to-r from-green-500 to-emerald-500 px-6 py-5 text-white text-center">
                             <CheckCircle2 className="w-10 h-10 mx-auto mb-2 opacity-90" />
                             <p className="font-bold text-lg">Presença Confirmada!</p>
-                            <p className="text-green-100 text-sm mt-0.5">
-                                Mal podemos esperar para te ver 💕
-                            </p>
+                            <p className="text-green-100 text-sm mt-0.5">Mal podemos esperar para te ver 💕</p>
                         </div>
-
-                        {/* Resumo */}
                         <div className="p-6 space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="bg-gray-50 rounded-xl p-4 text-center">
                                     <div className="flex items-center justify-center gap-1.5 text-gray-500 text-xs mb-1">
-                                        <Users className="w-3.5 h-3.5" />
-                                        Adultos
+                                        <Users className="w-3.5 h-3.5" /> Adultos
                                     </div>
-                                    <p className="text-3xl font-bold text-gray-800">
-                                        {stats.confirmacao.quantidade_adultos}
-                                    </p>
+                                    <p className="text-3xl font-bold text-gray-800">{stats.confirmacao.quantidade_adultos}</p>
                                 </div>
                                 <div className="bg-gray-50 rounded-xl p-4 text-center">
                                     <div className="flex items-center justify-center gap-1.5 text-gray-500 text-xs mb-1">
-                                        <Baby className="w-3.5 h-3.5" />
-                                        Crianças
+                                        <Baby className="w-3.5 h-3.5" /> Crianças
                                     </div>
-                                    <p className="text-3xl font-bold text-gray-800">
-                                        {stats.confirmacao.quantidade_criancas}
-                                    </p>
+                                    <p className="text-3xl font-bold text-gray-800">{stats.confirmacao.quantidade_criancas}</p>
                                 </div>
                             </div>
-
                             <div className="bg-primary-50 rounded-xl px-4 py-3 flex items-center justify-between">
                                 <span className="text-sm font-medium text-primary-700">Total de pessoas</span>
                                 <span className="text-2xl font-bold text-primary-700">
                                     {stats.confirmacao.quantidade_adultos + stats.confirmacao.quantidade_criancas}
                                 </span>
                             </div>
-
                             <button
                                 onClick={handleCancelar}
                                 disabled={cancelling}
                                 className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium text-red-500 border border-red-200 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {cancelling ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                ) : (
-                                    <X className="w-4 h-4" />
-                                )}
+                                {cancelling ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
                                 {cancelling ? "Cancelando..." : "Cancelar confirmação"}
                             </button>
                         </div>
                     </div>
                 ) : (
-                    /* ── Estado: formulário ── */
-                    <form onSubmit={handleSubmit}>
-                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                            {/* Faixa decorativa */}
-                            <div className="h-1.5 bg-gradient-to-r from-primary-400 via-secondary-400 to-romantic-gold" />
-
-                            <div className="p-6 sm:p-8 space-y-8">
-                                {/* Adultos */}
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <div className="flex items-center gap-2 mb-0.5">
-                                            <Users className="w-5 h-5 text-primary-500" />
-                                            <span className="font-semibold text-gray-800">Adultos</span>
-                                            <span className="text-xs text-primary-400 font-medium">mín. 1</span>
-                                        </div>
-                                        <p className="text-xs text-gray-400 ml-7">Maiores de 12 anos</p>
+                    /* ── Formulário ── */
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div className="h-1.5 bg-gradient-to-r from-primary-400 via-secondary-400 to-romantic-gold" />
+                        <div className="p-6 sm:p-8 space-y-8">
+                            {/* Adultos */}
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <div className="flex items-center gap-2 mb-0.5">
+                                        <Users className="w-5 h-5 text-primary-500" />
+                                        <span className="font-semibold text-gray-800">Adultos</span>
+                                        <span className="text-xs text-primary-400 font-medium">mín. 1</span>
                                     </div>
-                                    <Counter
-                                        value={formData.quantidade_adultos}
-                                        min={1}
-                                        onChange={(v) => setFormData((p) => ({ ...p, quantidade_adultos: v }))}
-                                    />
+                                    <p className="text-xs text-gray-400 ml-7">Maiores de 12 anos</p>
                                 </div>
+                                <Counter
+                                    value={formData.quantidade_adultos}
+                                    min={1}
+                                    onChange={(v) => setFormData((p) => ({ ...p, quantidade_adultos: v }))}
+                                />
+                            </div>
 
-                                <div className="border-t border-gray-50" />
+                            <div className="border-t border-gray-50" />
 
-                                {/* Crianças */}
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <div className="flex items-center gap-2 mb-0.5">
-                                            <Baby className="w-5 h-5 text-secondary-500" />
-                                            <span className="font-semibold text-gray-800">Crianças</span>
-                                            <span className="text-xs text-gray-400 font-medium">opcional</span>
-                                        </div>
-                                        <p className="text-xs text-gray-400 ml-7">Até 12 anos</p>
+                            {/* Crianças */}
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <div className="flex items-center gap-2 mb-0.5">
+                                        <Baby className="w-5 h-5 text-secondary-500" />
+                                        <span className="font-semibold text-gray-800">Crianças</span>
+                                        <span className="text-xs text-gray-400 font-medium">opcional</span>
                                     </div>
-                                    <Counter
-                                        value={formData.quantidade_criancas}
-                                        min={0}
-                                        onChange={(v) => setFormData((p) => ({ ...p, quantidade_criancas: v }))}
-                                    />
+                                    <p className="text-xs text-gray-400 ml-7">Até 12 anos</p>
                                 </div>
+                                <Counter
+                                    value={formData.quantidade_criancas}
+                                    min={0}
+                                    onChange={(v) => setFormData((p) => ({ ...p, quantidade_criancas: v }))}
+                                />
+                            </div>
 
-                                {/* Total */}
-                                <div className="bg-gradient-to-r from-primary-50 to-secondary-50 rounded-xl px-5 py-4 flex items-center justify-between">
-                                    <span className="text-sm font-medium text-gray-600">Total de pessoas</span>
-                                    <div className="flex items-baseline gap-1">
-                                        <span className="text-3xl font-bold text-primary-600 tabular-nums">
-                                            {total}
-                                        </span>
-                                        <span className="text-sm text-gray-400">
-                                            {total === 1 ? "pessoa" : "pessoas"}
-                                        </span>
+                            {/* Total */}
+                            <div className="bg-gradient-to-r from-primary-50 to-secondary-50 rounded-xl px-5 py-4 flex items-center justify-between">
+                                <span className="text-sm font-medium text-gray-600">Total de pessoas</span>
+                                <div className="flex items-baseline gap-1">
+                                    <span className="text-3xl font-bold text-primary-600 tabular-nums">{total}</span>
+                                    <span className="text-sm text-gray-400">{total === 1 ? "pessoa" : "pessoas"}</span>
+                                </div>
+                            </div>
+
+                            {/* Botão — abre modal */}
+                            <button
+                                type="button"
+                                onClick={() => setShowModal(true)}
+                                className="w-full bg-gradient-to-r from-primary-500 to-primary-600 text-white py-3.5 px-6 rounded-xl font-semibold hover:from-primary-600 hover:to-primary-700 transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg active:scale-[0.98]"
+                            >
+                                <Heart className="w-5 h-5" />
+                                Confirmar Presença
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Modal de confirmação */}
+            {showModal && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+                    onClick={(e) => { if (e.target === e.currentTarget) setShowModal(false); }}
+                >
+                    <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden animate-slideUp">
+                        {/* Header */}
+                        <div className="bg-gradient-to-r from-primary-500 to-secondary-500 px-6 py-5 text-white text-center relative">
+                            <button
+                                onClick={() => setShowModal(false)}
+                                className="absolute top-3 right-3 p-1.5 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                            <Heart className="w-8 h-8 mx-auto mb-2 opacity-90" />
+                            <p className="font-bold text-lg">Confirmar Presença</p>
+                            {convidado && (
+                                <p className="text-primary-100 text-sm mt-0.5">{convidado.nome}</p>
+                            )}
+                        </div>
+
+                        {/* Resumo */}
+                        <div className="p-6 space-y-4">
+                            <p className="text-center text-sm text-gray-500 mb-2">
+                                Confirme os dados antes de enviar:
+                            </p>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="bg-primary-50 rounded-xl p-4 text-center">
+                                    <div className="flex items-center justify-center gap-1.5 text-primary-500 text-xs font-medium mb-1">
+                                        <Users className="w-3.5 h-3.5" /> Adultos
                                     </div>
+                                    <p className="text-4xl font-bold text-primary-700 tabular-nums">
+                                        {formData.quantidade_adultos}
+                                    </p>
                                 </div>
+                                <div className="bg-secondary-50 rounded-xl p-4 text-center">
+                                    <div className="flex items-center justify-center gap-1.5 text-secondary-500 text-xs font-medium mb-1">
+                                        <Baby className="w-3.5 h-3.5" /> Crianças
+                                    </div>
+                                    <p className="text-4xl font-bold text-secondary-700 tabular-nums">
+                                        {formData.quantidade_criancas}
+                                    </p>
+                                </div>
+                            </div>
 
-                                {/* Botão */}
+                            <div className="bg-gray-50 rounded-xl px-5 py-3.5 flex items-center justify-between">
+                                <span className="text-sm font-semibold text-gray-600">Total</span>
+                                <div className="flex items-baseline gap-1">
+                                    <span className="text-2xl font-bold text-gray-800 tabular-nums">{total}</span>
+                                    <span className="text-sm text-gray-400">{total === 1 ? "pessoa" : "pessoas"}</span>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-3 pt-1">
                                 <button
-                                    type="submit"
+                                    type="button"
+                                    onClick={() => setShowModal(false)}
                                     disabled={loading}
-                                    className="w-full bg-gradient-to-r from-primary-500 to-primary-600 text-white py-3.5 px-6 rounded-xl font-semibold hover:from-primary-600 hover:to-primary-700 transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                                >
+                                    Corrigir
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleConfirmar}
+                                    disabled={loading}
+                                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 text-white text-sm font-semibold hover:from-primary-600 hover:to-primary-700 shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {loading ? (
-                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                        <Loader2 className="w-4 h-4 animate-spin" />
                                     ) : (
-                                        <Heart className="w-5 h-5" />
+                                        <CheckCircle2 className="w-4 h-4" />
                                     )}
-                                    {loading ? "Confirmando..." : "Confirmar Presença"}
+                                    {loading ? "Enviando..." : "Confirmar"}
                                 </button>
                             </div>
                         </div>
-                    </form>
-                )}
-            </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
