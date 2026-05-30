@@ -153,6 +153,7 @@ export interface EventoInfo {
     local: string;
     local_maps_url?: string;
     foto_casal_url?: string;
+    hosts?: string[];
     updated_at: string;
 }
 
@@ -162,6 +163,7 @@ export interface UpdateEventoRequest {
     local: string;
     local_maps_url?: string;
     foto_casal_url?: string;
+    hosts?: string[];
 }
 
 export interface Convidado {
@@ -171,6 +173,7 @@ export interface Convidado {
     email?: string;
     telefone?: string;
     observacoes?: string;
+    guest_of?: string;
     criado_em: string;
     atualizado_em: string;
 }
@@ -186,6 +189,7 @@ export interface CreateConvidadoRequest {
     email?: string;
     telefone?: string;
     observacoes?: string;
+    guest_of?: string;
 }
 
 export interface UpdateConvidadoRequest {
@@ -193,6 +197,7 @@ export interface UpdateConvidadoRequest {
     email?: string;
     telefone?: string;
     observacoes?: string;
+    guest_of?: string;
 }
 
 export interface ConvidadoStats {

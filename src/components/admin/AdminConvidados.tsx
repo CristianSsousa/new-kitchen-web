@@ -12,6 +12,7 @@ import {
     Share2,
     Trash2,
     UserCheck,
+    UserCircle2,
     Users,
     X,
 } from "lucide-react";
@@ -231,6 +232,12 @@ const AdminConvidados = () => {
                                             <p className="font-semibold text-gray-800 leading-tight">
                                                 {convidado.nome}
                                             </p>
+                                            {convidado.guest_of && (
+                                                <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-xs font-medium bg-secondary-50 text-secondary-700 border border-secondary-100">
+                                                    <UserCircle2 className="w-3 h-3" />
+                                                    {convidado.guest_of}
+                                                </span>
+                                            )}
                                             {(convidado.email || convidado.telefone) && (
                                                 <p className="text-xs text-gray-500 mt-0.5">
                                                     {convidado.email || convidado.telefone}
