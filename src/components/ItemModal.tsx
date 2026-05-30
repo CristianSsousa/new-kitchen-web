@@ -1,4 +1,4 @@
-import { ExternalLink, Image, X } from "lucide-react";
+import { ExternalLink, Image, X, XCircle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { CreateItemRequest, Item } from "../types";
 import { CATEGORIAS } from "../types";
@@ -28,6 +28,7 @@ const ItemModal = ({
     });
 
     const [previewImage, setPreviewImage] = useState<string | null>(null);
+    const [imgError, setImgError] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
     const overlayRef = useRef<HTMLDivElement>(null);
@@ -54,6 +55,7 @@ const ItemModal = ({
             });
             setPreviewImage(null);
         }
+        setImgError(false);
         setFieldErrors({});
     }, [item]);
 
@@ -90,6 +92,14 @@ const ItemModal = ({
     const handleImageUrlChange = (url: string) => {
         setFormData({ ...formData, imagem_url: url });
         setPreviewImage(url);
+        setImgError(false);
+    };
+
+    const handleClearImage = () => {
+        setFormData({ ...formData, imagem_url: "" });
+        setPreviewImage(null);
+        setImgError(false);
+        if (fieldErrors.imagem_url) setFieldErrors((prev) => ({ ...prev, imagem_url: "" }));
     };
 
     if (!isOpen) return null;
@@ -222,35 +232,61 @@ const ItemModal = ({
                                 <label className="form-label">
                                     Imagem do Item
                                 </label>
-                                <div className="mt-1 border-2 border-dashed border-gray-200 rounded-lg p-4 bg-gray-50">
-                                    {previewImage ? (
-                                        <div className="relative aspect-video">
-                                            <img
-                                                src={previewImage}
-                                                alt="Preview"
-                                                className="w-full h-full object-cover rounded-lg"
-                                                onError={() =>
-                                                    setPreviewImage(null)
-                                                }
-                                            />
-                                        </div>
-                                    ) : (
-                                        <div className="flex items-center justify-center aspect-video bg-gray-100 rounded-lg">
-                                            <Image className="h-12 w-12 text-gray-400" />
-                                        </div>
-                                    )}
+                                <div className="mt-1 rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 p-4">
+                                    <div className="relative overflow-hidden rounded-lg bg-gray-100 h-52">
+                                        {previewImage && !imgError ? (
+                                            <>
+                                                <img
+                                                    src={previewImage}
+                                                    alt="Preview"
+                                                    className="object-contain w-full h-full"
+                                                    onError={() => setImgError(true)}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={handleClearImage}
+                                                    className="absolute top-2 right-2 p-1 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+                                                    aria-label="Remover imagem"
+                                                >
+                                                    <XCircle className="w-4 h-4" />
+                                                </button>
+                                            </>
+                                        ) : imgError ? (
+                                            <div className="flex flex-col gap-1 justify-center items-center w-full h-full text-center">
+                                                <Image className="w-8 h-8 text-gray-300" />
+                                                <p className="text-xs text-red-400">URL inválida ou imagem não carregou</p>
+                                            </div>
+                                        ) : (
+                                            <div className="flex flex-col gap-1 justify-center items-center w-full h-full text-center text-gray-400">
+                                                <Image className="w-10 h-10 text-gray-300" />
+                                                <p className="text-xs">Preview aparecerá aqui</p>
+                                            </div>
+                                        )}
+                                    </div>
 
-                                    <input
-                                        type="url"
-                                        id="imagem_url"
-                                        value={formData.imagem_url}
-                                        onChange={(e) => {
-                                            handleImageUrlChange(e.target.value);
-                                            if (fieldErrors.imagem_url) setFieldErrors((prev) => ({ ...prev, imagem_url: "" }));
-                                        }}
-                                        className={`input-field mt-3 ${fieldErrors.imagem_url ? "border-red-400 focus:ring-red-300" : ""}`}
-                                        placeholder="Cole a URL da imagem aqui"
-                                    />
+                                    <div className="relative mt-3">
+                                        <input
+                                            type="url"
+                                            id="imagem_url"
+                                            value={formData.imagem_url}
+                                            onChange={(e) => {
+                                                handleImageUrlChange(e.target.value);
+                                                if (fieldErrors.imagem_url) setFieldErrors((prev) => ({ ...prev, imagem_url: "" }));
+                                            }}
+                                            className={`input-field pr-9 ${fieldErrors.imagem_url ? "border-red-400 focus:ring-red-300" : ""}`}
+                                            placeholder="Cole a URL da imagem aqui"
+                                        />
+                                        {formData.imagem_url && (
+                                            <button
+                                                type="button"
+                                                onClick={handleClearImage}
+                                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                                                aria-label="Limpar URL"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        )}
+                                    </div>
                                     {fieldErrors.imagem_url && (
                                         <p className="mt-1 text-xs text-red-500">{fieldErrors.imagem_url}</p>
                                     )}
