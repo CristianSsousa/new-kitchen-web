@@ -1,6 +1,7 @@
 import { Copy, ExternalLink, Key, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
+import { eventoApi } from "../services/api";
 import type { CreateConvidadoRequest, Convidado } from "../types";
 
 interface ConvidadoModalProps {
@@ -23,10 +24,17 @@ const ConvidadoModal = ({
         email: "",
         telefone: "",
         observacoes: "",
+        guest_of: "",
     });
     const [submitting, setSubmitting] = useState(false);
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+    const [hosts, setHosts] = useState<string[]>([]);
     const overlayRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        eventoApi.getEventoInfo().then((info) => setHosts(info.hosts ?? [])).catch(() => {});
+    }, [isOpen]);
 
     useEffect(() => {
         if (convidado) {
@@ -35,6 +43,7 @@ const ConvidadoModal = ({
                 email: convidado.email || "",
                 telefone: convidado.telefone || "",
                 observacoes: convidado.observacoes || "",
+                guest_of: convidado.guest_of || "",
             });
         } else {
             setFormData({
@@ -42,6 +51,7 @@ const ConvidadoModal = ({
                 email: "",
                 telefone: "",
                 observacoes: "",
+                guest_of: "",
             });
         }
         setFieldErrors({});
@@ -234,6 +244,26 @@ const ConvidadoModal = ({
                                 placeholder="(11) 99999-9999"
                             />
                         </div>
+
+                        {/* Convidado de */}
+                        {hosts.length > 0 && (
+                            <div className="md:col-span-2">
+                                <label htmlFor="guest_of" className="form-label">
+                                    Convidado de
+                                </label>
+                                <select
+                                    id="guest_of"
+                                    value={formData.guest_of}
+                                    onChange={(e) => setFormData({ ...formData, guest_of: e.target.value })}
+                                    className="input-field"
+                                >
+                                    <option value="">— Sem classificação —</option>
+                                    {hosts.map((host) => (
+                                        <option key={host} value={host}>{host}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
 
                         {/* Observações */}
                         <div className="md:col-span-2">

@@ -43,6 +43,7 @@ export const useAdminConvidados = () => {
                 email: convidadoData.email,
                 telefone: convidadoData.telefone,
                 observacoes: convidadoData.observacoes,
+                guest_of: convidadoData.guest_of,
             });
             setConvidados((prev) =>
                 prev.map((c) => (c.id === id ? { ...c, ...updatedConvidado } : c))

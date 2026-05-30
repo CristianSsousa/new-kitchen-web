@@ -1,4 +1,4 @@
-import { Calendar, Clock, Image, MapPin } from "lucide-react";
+import { Calendar, Clock, Image, MapPin, Plus, UserCircle2, X as XIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { eventoApi } from "../services/api";
@@ -13,7 +13,9 @@ const EventoForm = () => {
         local: "",
         local_maps_url: "",
         foto_casal_url: "",
+        hosts: [],
     });
+    const [newHost, setNewHost] = useState("");
 
     useEffect(() => {
         loadEventoInfo();
@@ -29,6 +31,7 @@ const EventoForm = () => {
                 local: data.local || "",
                 local_maps_url: data.local_maps_url || "",
                 foto_casal_url: data.foto_casal_url || "",
+                hosts: data.hosts || [],
             });
         } catch (err) {
             toast.error("Erro ao carregar informações do evento");
@@ -200,6 +203,77 @@ const EventoForm = () => {
                         onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                     />
                 )}
+            </div>
+
+            {/* Donos da Festa */}
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <div className="flex items-center space-x-2">
+                        <UserCircle2 className="h-5 w-5 text-gray-400" />
+                        <span>Donos da Festa</span>
+                    </div>
+                </label>
+                <div className="flex gap-2 mb-3">
+                    <input
+                        type="text"
+                        value={newHost}
+                        onChange={(e) => setNewHost(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                e.preventDefault();
+                                const name = newHost.trim();
+                                if (name && !(formData.hosts ?? []).includes(name)) {
+                                    setFormData({ ...formData, hosts: [...(formData.hosts ?? []), name] });
+                                    setNewHost("");
+                                }
+                            }
+                        }}
+                        className="input-field flex-1"
+                        placeholder="Nome do dono da festa"
+                    />
+                    <button
+                        type="button"
+                        onClick={() => {
+                            const name = newHost.trim();
+                            if (name && !(formData.hosts ?? []).includes(name)) {
+                                setFormData({ ...formData, hosts: [...(formData.hosts ?? []), name] });
+                                setNewHost("");
+                            }
+                        }}
+                        className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-white rounded-lg bg-primary-600 hover:bg-primary-700 transition-colors"
+                    >
+                        <Plus className="h-4 w-4" />
+                        Adicionar
+                    </button>
+                </div>
+                {(formData.hosts ?? []).length > 0 && (
+                    <ul className="space-y-2">
+                        {(formData.hosts ?? []).map((host) => (
+                            <li
+                                key={host}
+                                className="flex items-center justify-between px-3 py-2 rounded-lg bg-gray-50 border border-gray-200"
+                            >
+                                <span className="text-sm text-gray-800">{host}</span>
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setFormData({
+                                            ...formData,
+                                            hosts: (formData.hosts ?? []).filter((h) => h !== host),
+                                        })
+                                    }
+                                    className="text-gray-400 hover:text-red-500 transition-colors"
+                                    aria-label={`Remover ${host}`}
+                                >
+                                    <XIcon className="h-4 w-4" />
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+                <p className="mt-1 text-sm text-gray-500">
+                    Opcional: nomes usados para identificar de qual dono cada convidado pertence
+                </p>
             </div>
 
             {/* Botão de Salvar */}
