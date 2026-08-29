@@ -246,7 +246,7 @@ const ConvidadoModal = ({
                         </div>
 
                         {/* Convidado de */}
-                        {hosts.length > 0 && (
+                        {(hosts.length > 0 || formData.guest_of) && (
                             <div className="md:col-span-2">
                                 <label htmlFor="guest_of" className="form-label">
                                     Convidado de
@@ -261,6 +261,11 @@ const ConvidadoModal = ({
                                     {hosts.map((host) => (
                                         <option key={host} value={host}>{host}</option>
                                     ))}
+                                    {formData.guest_of && !hosts.includes(formData.guest_of) && (
+                                        <option value={formData.guest_of}>
+                                            {formData.guest_of} (removido dos anfitriões)
+                                        </option>
+                                    )}
                                 </select>
                             </div>
                         )}
