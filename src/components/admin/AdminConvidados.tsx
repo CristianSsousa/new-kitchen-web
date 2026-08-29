@@ -153,6 +153,12 @@ const AdminConvidados = () => {
         new Set(convidados.map((c) => c.guest_of).filter((h): h is string => !!h))
     ).sort();
 
+    const contagemPorHost: Record<string, number> = {};
+    hostsDisponiveis.forEach((host) => {
+        contagemPorHost[host] = convidados.filter((c) => c.guest_of === host).length;
+    });
+    const contagemSemTag = convidados.filter((c) => !c.guest_of).length;
+
     const filtered = convidados.filter((c) => {
         const q = search.toLowerCase();
         const matchesSearch =
@@ -230,9 +236,12 @@ const AdminConvidados = () => {
                 <div className="flex flex-wrap gap-2 items-center">
                     <UserCircle2 className="w-4 h-4 text-gray-400 shrink-0" />
                     {[
-                        { value: "todos", label: "Todos" },
-                        ...hostsDisponiveis.map((host) => ({ value: host, label: host })),
-                        { value: SEM_TAG, label: "Sem classificação" },
+                        { value: "todos", label: `Todos (${convidados.length})` },
+                        ...hostsDisponiveis.map((host) => ({
+                            value: host,
+                            label: `${host} (${contagemPorHost[host]})`,
+                        })),
+                        { value: SEM_TAG, label: `Sem classificação (${contagemSemTag})` },
                     ].map(({ value, label }) => (
                         <button
                             key={value}
