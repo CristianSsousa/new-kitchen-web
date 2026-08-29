@@ -1,5 +1,5 @@
-import { Copy, ExternalLink, Key, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Copy, ExternalLink, Key, RefreshCw, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { eventoApi } from "../services/api";
 import type { CreateConvidadoRequest, Convidado } from "../types";
@@ -29,12 +29,24 @@ const ConvidadoModal = ({
     const [submitting, setSubmitting] = useState(false);
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
     const [hosts, setHosts] = useState<string[]>([]);
+    const [hostsLoading, setHostsLoading] = useState(false);
+    const [hostsError, setHostsError] = useState(false);
     const overlayRef = useRef<HTMLDivElement>(null);
+
+    const loadHosts = useCallback(() => {
+        setHostsLoading(true);
+        setHostsError(false);
+        eventoApi
+            .getEventoInfo()
+            .then((info) => setHosts(info.hosts ?? []))
+            .catch(() => setHostsError(true))
+            .finally(() => setHostsLoading(false));
+    }, []);
 
     useEffect(() => {
         if (!isOpen) return;
-        eventoApi.getEventoInfo().then((info) => setHosts(info.hosts ?? [])).catch(() => {});
-    }, [isOpen]);
+        loadHosts();
+    }, [isOpen, loadHosts]);
 
     useEffect(() => {
         if (convidado) {
@@ -246,11 +258,32 @@ const ConvidadoModal = ({
                         </div>
 
                         {/* Convidado de */}
-                        {(hosts.length > 0 || formData.guest_of) && (
-                            <div className="md:col-span-2">
-                                <label htmlFor="guest_of" className="form-label">
-                                    Convidado de
-                                </label>
+                        <div className="md:col-span-2">
+                            <label htmlFor="guest_of" className="form-label">
+                                Convidado de
+                            </label>
+                            {hostsError ? (
+                                <div className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg bg-red-50 border border-red-100">
+                                    <p className="text-sm text-red-600">
+                                        Não foi possível carregar os anfitriões.
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={loadHosts}
+                                        disabled={hostsLoading}
+                                        className="flex items-center gap-1.5 text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
+                                    >
+                                        <RefreshCw className={`w-3.5 h-3.5 ${hostsLoading ? "animate-spin" : ""}`} />
+                                        Tentar de novo
+                                    </button>
+                                </div>
+                            ) : hosts.length === 0 && !formData.guest_of ? (
+                                <p className="text-sm text-gray-500 px-3 py-2.5 rounded-lg bg-gray-50 border border-gray-200">
+                                    {hostsLoading
+                                        ? "Carregando anfitriões..."
+                                        : "Nenhum anfitrião cadastrado ainda. Adicione em Evento → Donos da Festa para poder classificar convidados."}
+                                </p>
+                            ) : (
                                 <select
                                     id="guest_of"
                                     value={formData.guest_of}
@@ -267,8 +300,8 @@ const ConvidadoModal = ({
                                         </option>
                                     )}
                                 </select>
-                            </div>
-                        )}
+                            )}
+                        </div>
 
                         {/* Observações */}
                         <div className="md:col-span-2">
