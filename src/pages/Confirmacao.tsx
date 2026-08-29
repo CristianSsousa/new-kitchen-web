@@ -71,11 +71,7 @@ const Confirmacao = () => {
             });
             toast.success("Que alegria! Sua presença foi confirmada! 🎉");
             setShowModal(false);
-            if (convidado) {
-                await refreshStats();
-            } else {
-                setFormData({ quantidade_adultos: 1, quantidade_criancas: 0 });
-            }
+            await refreshStats();
         } catch {
             toast.error("Erro ao enviar confirmação. Tente novamente.");
         } finally {
@@ -94,11 +90,9 @@ const Confirmacao = () => {
                     </div>
                     <h1 className="title-romantic mb-2">Confirmação de Presença</h1>
                     <p className="text-gray-500 text-sm">
-                        {convidado
-                            ? jaTemConfirmacao
-                                ? `Olá, ${convidado.nome.split(" ")[0]}! Sua presença já está confirmada 🎉`
-                                : `Olá, ${convidado.nome.split(" ")[0]}! Confirme sua presença abaixo 💕`
-                            : "Sua presença é muito importante para nós 💝"}
+                        {jaTemConfirmacao
+                            ? `Olá, ${convidado?.nome.split(" ")[0]}! Sua presença já está confirmada 🎉`
+                            : `Olá, ${convidado?.nome.split(" ")[0]}! Confirme sua presença abaixo 💕`}
                     </p>
                 </div>
 
