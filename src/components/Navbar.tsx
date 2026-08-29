@@ -1,5 +1,4 @@
 import {
-    BarChart,
     CheckSquare,
     Copy,
     Gift,
@@ -27,7 +26,6 @@ const Navbar = () => {
         { name: "Presentes", href: "/lista-presentes", icon: Gift },
         { name: "Mensagens", href: "/mensagens", icon: MessageCircle },
         { name: "Confirmação", href: "/confirmacao", icon: CheckSquare },
-        { name: "Estatísticas", href: "/estatisticas", icon: BarChart },
     ];
 
     const publicNavigation = [
