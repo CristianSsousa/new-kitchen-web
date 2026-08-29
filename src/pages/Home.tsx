@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { eventoApi } from "../services/api";
 import { useConvidado } from "../contexts/ConvidadoContext";
+import { formatDateOnly } from "../utils/format";
 import type { EventoInfo } from "../types";
 
 interface Countdown {
@@ -67,12 +68,7 @@ const Home = () => {
         }
     };
 
-    const formatarData = (data: string) =>
-        new Date(data).toLocaleDateString("pt-BR", {
-            day: "2-digit",
-            month: "long",
-            year: "numeric",
-        });
+    const formatarData = (data: string) => formatDateOnly(data);
 
     const formatarHorario = (horario: string) => {
         const [hora, minuto] = horario.split(":");
