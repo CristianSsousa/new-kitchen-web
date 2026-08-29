@@ -41,6 +41,7 @@ const AdminConvidados = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedConvidado, setSelectedConvidado] = useState<Convidado | undefined>(undefined);
     const [search, setSearch] = useState("");
+    const [filtroHost, setFiltroHost] = useState<string>("todos");
     const [page, setPage] = useState(1);
     const [shareMenuId, setShareMenuId] = useState<number | null>(null);
     const shareMenuRef = useRef<HTMLDivElement>(null);
@@ -147,14 +148,25 @@ const AdminConvidados = () => {
     const getInitials = (nome: string) =>
         nome.split(" ").slice(0, 2).map((n) => n[0]).join("").toUpperCase();
 
+    const SEM_TAG = "__sem_tag__";
+    const hostsDisponiveis = Array.from(
+        new Set(convidados.map((c) => c.guest_of).filter((h): h is string => !!h))
+    ).sort();
+
     const filtered = convidados.filter((c) => {
         const q = search.toLowerCase();
-        return (
+        const matchesSearch =
             c.nome.toLowerCase().includes(q) ||
             c.codigo_unico.toLowerCase().includes(q) ||
             (c.email ?? "").toLowerCase().includes(q) ||
-            (c.telefone ?? "").toLowerCase().includes(q)
-        );
+            (c.telefone ?? "").toLowerCase().includes(q);
+        const matchesHost =
+            filtroHost === "todos"
+                ? true
+                : filtroHost === SEM_TAG
+                ? !c.guest_of
+                : c.guest_of === filtroHost;
+        return matchesSearch && matchesHost;
     });
 
     const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
@@ -213,6 +225,30 @@ const AdminConvidados = () => {
                 )}
             </div>
 
+            {/* Filtro por "Convidado de" */}
+            {hostsDisponiveis.length > 0 && (
+                <div className="flex flex-wrap gap-2 items-center">
+                    <UserCircle2 className="w-4 h-4 text-gray-400 shrink-0" />
+                    {[
+                        { value: "todos", label: "Todos" },
+                        ...hostsDisponiveis.map((host) => ({ value: host, label: host })),
+                        { value: SEM_TAG, label: "Sem classificação" },
+                    ].map(({ value, label }) => (
+                        <button
+                            key={value}
+                            onClick={() => { setFiltroHost(value); setPage(1); }}
+                            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                                filtroHost === value
+                                    ? "bg-secondary-500 text-white shadow-sm"
+                                    : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+                            }`}
+                        >
+                            {label}
+                        </button>
+                    ))}
+                </div>
+            )}
+
             {/* Lista */}
             {loading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -226,7 +262,11 @@ const AdminConvidados = () => {
                 <div className="text-center py-12">
                     <Users className="w-10 h-10 text-gray-300 mx-auto mb-3" />
                     <p className="text-gray-500">
-                        {search ? `Nenhum convidado encontrado para "${search}"` : "Nenhum convidado cadastrado"}
+                        {search
+                            ? `Nenhum convidado encontrado para "${search}"`
+                            : filtroHost !== "todos"
+                            ? "Nenhum convidado nessa classificação"
+                            : "Nenhum convidado cadastrado"}
                     </p>
                 </div>
             ) : (
