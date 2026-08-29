@@ -1,6 +1,8 @@
 import { Heart } from "lucide-react";
 
 const Footer = () => {
+    const anoAtual = new Date().getFullYear();
+
     return (
         <footer className="bg-white/80 backdrop-blur-sm border-t border-romantic-gold/20 mt-auto">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -19,7 +21,7 @@ const Footer = () => {
                         Feito com muito amor e carinho para nossa nova jornada
                     </p>
                     <div className="mt-4 flex justify-center space-x-4 text-sm text-gray-400">
-                        <span>💒 2025</span>
+                        <span>💒 {anoAtual}</span>
                         <span>•</span>
                         <span>🏡 Novo Lar</span>
                         <span>•</span>
