@@ -3,6 +3,8 @@ import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { mensagensApi } from "../../services/api";
 import type { Mensagem } from "../../types";
+import ConfirmDialog from "../ConfirmDialog";
+import { useConfirmDialog } from "../../hooks/useConfirmDialog";
 
 type FiltroStatus = "todas" | "pendentes" | "aprovadas";
 
@@ -12,6 +14,7 @@ const AdminMensagens = () => {
     const [error, setError] = useState<string | null>(null);
     const [loadingId, setLoadingId] = useState<number | null>(null);
     const [filtro, setFiltro] = useState<FiltroStatus>("todas");
+    const deleteConfirm = useConfirmDialog<Mensagem>();
 
     const loadMensagens = useCallback(async () => {
         try {
@@ -44,17 +47,19 @@ const AdminMensagens = () => {
         }
     };
 
-    const handleDeletar = async (id: number) => {
-        if (!confirm("Tem certeza que deseja deletar esta mensagem?")) return;
+    const handleDeletar = async () => {
+        const mensagem = deleteConfirm.target;
+        if (!mensagem) return;
         try {
-            setLoadingId(id);
-            await mensagensApi.deleteMensagem(id);
-            setMensagens((prev) => prev.filter((m) => m.id !== id));
+            setLoadingId(mensagem.id);
+            await mensagensApi.deleteMensagem(mensagem.id);
+            setMensagens((prev) => prev.filter((m) => m.id !== mensagem.id));
             toast.success("Mensagem deletada com sucesso!");
         } catch {
             toast.error("Erro ao deletar mensagem");
         } finally {
             setLoadingId(null);
+            deleteConfirm.cancel();
         }
     };
 
@@ -147,7 +152,7 @@ const AdminMensagens = () => {
                                         </button>
                                     )}
                                     <button
-                                        onClick={() => handleDeletar(mensagem.id)}
+                                        onClick={() => deleteConfirm.request(mensagem)}
                                         disabled={loadingId === mensagem.id}
                                         className="btn-danger disabled:opacity-60 disabled:cursor-not-allowed"
                                         aria-label="Deletar mensagem"
@@ -164,6 +169,16 @@ const AdminMensagens = () => {
                     ))}
                 </div>
             )}
+
+            <ConfirmDialog
+                isOpen={deleteConfirm.isOpen}
+                title="Deletar mensagem?"
+                message="Tem certeza que deseja deletar esta mensagem? Essa ação não pode ser desfeita."
+                confirmLabel="Deletar"
+                loading={loadingId === deleteConfirm.target?.id}
+                onConfirm={handleDeletar}
+                onCancel={deleteConfirm.cancel}
+            />
         </div>
     );
 };

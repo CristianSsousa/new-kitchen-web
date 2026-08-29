@@ -10,7 +10,6 @@ import { ConvidadoProvider } from "./contexts/ConvidadoContext";
 import Admin from "./pages/Admin";
 import Confirmacao from "./pages/Confirmacao";
 import ConvidadoLogin from "./pages/ConvidadoLogin";
-import Estatisticas from "./pages/Estatisticas";
 import Home from "./pages/Home";
 import ListaPresentes from "./pages/ListaPresentes";
 import Login from "./pages/Login";
@@ -95,14 +94,6 @@ function App() {
                                     <PrivateRoute>
                                         <Admin />
                                     </PrivateRoute>
-                                }
-                            />
-                            <Route
-                                path="/estatisticas"
-                                element={
-                                    <ConvidadoRoute>
-                                        <Estatisticas />
-                                    </ConvidadoRoute>
                                 }
                             />
                             <Route path="*" element={<NotFound />} />

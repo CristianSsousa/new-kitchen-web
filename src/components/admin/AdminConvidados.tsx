@@ -19,7 +19,9 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import ConvidadoModal from "../ConvidadoModal";
+import ConfirmDialog from "../ConfirmDialog";
 import { useAdminConvidados } from "../../hooks/useAdminConvidados";
+import { useConfirmDialog } from "../../hooks/useConfirmDialog";
 import { confirmacoesApi } from "../../services/api";
 import type { Convidado, CreateConvidadoRequest } from "../../types";
 
@@ -39,10 +41,13 @@ const AdminConvidados = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedConvidado, setSelectedConvidado] = useState<Convidado | undefined>(undefined);
     const [search, setSearch] = useState("");
+    const [filtroHost, setFiltroHost] = useState<string>("todos");
     const [page, setPage] = useState(1);
     const [shareMenuId, setShareMenuId] = useState<number | null>(null);
     const shareMenuRef = useRef<HTMLDivElement>(null);
     const PER_PAGE = 10;
+    const deleteConfirm = useConfirmDialog<Convidado>();
+    const regenerarConfirm = useConfirmDialog<Convidado>();
 
     const loadConfirmados = useCallback(async () => {
         try {
@@ -89,6 +94,20 @@ const AdminConvidados = () => {
         setIsModalOpen(true);
     };
 
+    const handleRegenerarCodigo = async () => {
+        const convidado = regenerarConfirm.target;
+        if (!convidado) return;
+        await regenerarCodigo(convidado.id);
+        regenerarConfirm.cancel();
+    };
+
+    const handleDeleteConvidado = async () => {
+        const convidado = deleteConfirm.target;
+        if (!convidado) return;
+        await deleteConvidado(convidado.id);
+        deleteConfirm.cancel();
+    };
+
     const buildGuestLink = (codigo: string) =>
         `${window.location.origin}/convidado/${codigo}`;
 
@@ -129,14 +148,31 @@ const AdminConvidados = () => {
     const getInitials = (nome: string) =>
         nome.split(" ").slice(0, 2).map((n) => n[0]).join("").toUpperCase();
 
+    const SEM_TAG = "__sem_tag__";
+    const hostsDisponiveis = Array.from(
+        new Set(convidados.map((c) => c.guest_of).filter((h): h is string => !!h))
+    ).sort();
+
+    const contagemPorHost: Record<string, number> = {};
+    hostsDisponiveis.forEach((host) => {
+        contagemPorHost[host] = convidados.filter((c) => c.guest_of === host).length;
+    });
+    const contagemSemTag = convidados.filter((c) => !c.guest_of).length;
+
     const filtered = convidados.filter((c) => {
         const q = search.toLowerCase();
-        return (
+        const matchesSearch =
             c.nome.toLowerCase().includes(q) ||
             c.codigo_unico.toLowerCase().includes(q) ||
             (c.email ?? "").toLowerCase().includes(q) ||
-            (c.telefone ?? "").toLowerCase().includes(q)
-        );
+            (c.telefone ?? "").toLowerCase().includes(q);
+        const matchesHost =
+            filtroHost === "todos"
+                ? true
+                : filtroHost === SEM_TAG
+                ? !c.guest_of
+                : c.guest_of === filtroHost;
+        return matchesSearch && matchesHost;
     });
 
     const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
@@ -195,6 +231,33 @@ const AdminConvidados = () => {
                 )}
             </div>
 
+            {/* Filtro por "Convidado de" */}
+            {hostsDisponiveis.length > 0 && (
+                <div className="flex flex-wrap gap-2 items-center">
+                    <UserCircle2 className="w-4 h-4 text-gray-400 shrink-0" />
+                    {[
+                        { value: "todos", label: `Todos (${convidados.length})` },
+                        ...hostsDisponiveis.map((host) => ({
+                            value: host,
+                            label: `${host} (${contagemPorHost[host]})`,
+                        })),
+                        { value: SEM_TAG, label: `Sem classificação (${contagemSemTag})` },
+                    ].map(({ value, label }) => (
+                        <button
+                            key={value}
+                            onClick={() => { setFiltroHost(value); setPage(1); }}
+                            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                                filtroHost === value
+                                    ? "bg-secondary-500 text-white shadow-sm"
+                                    : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+                            }`}
+                        >
+                            {label}
+                        </button>
+                    ))}
+                </div>
+            )}
+
             {/* Lista */}
             {loading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -208,7 +271,11 @@ const AdminConvidados = () => {
                 <div className="text-center py-12">
                     <Users className="w-10 h-10 text-gray-300 mx-auto mb-3" />
                     <p className="text-gray-500">
-                        {search ? `Nenhum convidado encontrado para "${search}"` : "Nenhum convidado cadastrado"}
+                        {search
+                            ? `Nenhum convidado encontrado para "${search}"`
+                            : filtroHost !== "todos"
+                            ? "Nenhum convidado nessa classificação"
+                            : "Nenhum convidado cadastrado"}
                     </p>
                 </div>
             ) : (
@@ -314,11 +381,7 @@ const AdminConvidados = () => {
                                 {/* Ações */}
                                 <div className="flex items-center justify-end gap-1 pt-1 border-t border-gray-100">
                                     <button
-                                        onClick={async () => {
-                                            if (window.confirm("Gerar novo código? O código atual ficará inválido.")) {
-                                                await regenerarCodigo(convidado.id);
-                                            }
-                                        }}
+                                        onClick={() => regenerarConfirm.request(convidado)}
                                         disabled={isLoading}
                                         className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-orange-600 rounded-lg hover:bg-orange-50 transition-colors disabled:opacity-50"
                                         title="Regenerar código"
@@ -338,11 +401,7 @@ const AdminConvidados = () => {
                                         Editar
                                     </button>
                                     <button
-                                        onClick={async () => {
-                                            if (window.confirm("Remover este convidado?")) {
-                                                await deleteConvidado(convidado.id);
-                                            }
-                                        }}
+                                        onClick={() => deleteConfirm.request(convidado)}
                                         disabled={isLoading}
                                         className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
                                     >
@@ -407,6 +466,27 @@ const AdminConvidados = () => {
                 onSubmit={handleSubmit}
                 convidado={selectedConvidado}
                 title={selectedConvidado ? "Editar Convidado" : "Novo Convidado"}
+            />
+
+            <ConfirmDialog
+                isOpen={regenerarConfirm.isOpen}
+                title="Gerar novo código?"
+                message={`O código atual de ${regenerarConfirm.target?.nome} ficará inválido e o link de acesso enviado anteriormente deixará de funcionar.`}
+                confirmLabel="Gerar novo código"
+                danger={false}
+                loading={loadingConvidadoId === regenerarConfirm.target?.id}
+                onConfirm={handleRegenerarCodigo}
+                onCancel={regenerarConfirm.cancel}
+            />
+
+            <ConfirmDialog
+                isOpen={deleteConfirm.isOpen}
+                title="Remover convidado?"
+                message={`Tem certeza que deseja remover ${deleteConfirm.target?.nome}? Essa ação não pode ser desfeita.`}
+                confirmLabel="Remover"
+                loading={loadingConvidadoId === deleteConfirm.target?.id}
+                onConfirm={handleDeleteConvidado}
+                onCancel={deleteConfirm.cancel}
             />
         </div>
     );

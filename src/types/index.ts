@@ -39,14 +39,6 @@ export interface Stats {
     porcentagem_concluida: number;
 }
 
-export interface Estatisticas {
-    total_itens: number;
-    itens_resgatados: number;
-    total_mensagens: number;
-    total_convidados: number;
-    porcentagem_concluida: number;
-}
-
 export interface EstatisticasDetalhadas {
     total_itens: number;
     itens_resgatados: number;
@@ -87,6 +79,10 @@ export interface ApiErrorResponse {
 
 export interface ResgatarItemRequest {
     nome: string;
+    codigo_convidado?: string;
+}
+
+export interface CancelaResgateRequest {
     codigo_convidado?: string;
 }
 

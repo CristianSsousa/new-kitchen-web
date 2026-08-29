@@ -46,7 +46,6 @@ const Mensagens = () => {
     const { convidado } = useConvidado();
 
     const [formData, setFormData] = useState({
-        nome: convidado?.nome || "",
         mensagem: "",
     });
 
@@ -73,18 +72,18 @@ const Mensagens = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if ((!formData.nome && !convidado?.nome) || !formData.mensagem) {
+        if (!convidado || !formData.mensagem) {
             toast.error("Por favor, preencha todos os campos");
             return;
         }
 
         try {
             await mensagensApi.createMensagem({
-                nome: convidado?.nome || formData.nome,
+                nome: convidado.nome,
                 mensagem: formData.mensagem,
             });
             toast.success("Mensagem enviada com sucesso! Aguarde aprovação 💕");
-            setFormData({ nome: "", mensagem: "" });
+            setFormData({ mensagem: "" });
             loadMensagens();
         } catch (err) {
             toast.error("Erro ao enviar mensagem. Tente novamente.");
@@ -116,28 +115,6 @@ const Mensagens = () => {
                 <div className="mx-auto max-w-2xl">
                     <div className="overflow-hidden mb-16 bg-white rounded-2xl border border-gray-100 shadow-xl">
                         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                            {/* Campo Nome apenas se não houver convidado logado */}
-                            {!convidado && (
-                                <div>
-                                    <label htmlFor="nome" className="form-label">
-                                        Seu Nome
-                                    </label>
-                                    <input
-                                        type="text"
-                                        id="nome"
-                                        name="nome"
-                                        value={formData.nome}
-                                        onChange={(e) =>
-                                            setFormData({
-                                                ...formData,
-                                                nome: e.target.value,
-                                            })
-                                        }
-                                        className="mt-2 input-field"
-                                        placeholder="Como devemos te chamar?"
-                                    />
-                                </div>
-                            )}
                             <div>
                                 <label
                                     htmlFor="mensagem"

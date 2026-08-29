@@ -209,19 +209,22 @@ const ItemModal = ({
                                         type="number"
                                         id="preco"
                                         value={formData.preco}
-                                        onChange={(e) =>
+                                        onChange={(e) => {
+                                            const parsed = parseFloat(e.target.value);
                                             setFormData({
                                                 ...formData,
-                                                preco: parseFloat(
-                                                    e.target.value
-                                                ),
-                                            })
-                                        }
-                                        className="input-field"
+                                                preco: isNaN(parsed) ? 0 : parsed,
+                                            });
+                                            if (fieldErrors.preco) setFieldErrors((prev) => ({ ...prev, preco: "" }));
+                                        }}
+                                        className={`input-field ${fieldErrors.preco ? "border-red-400 focus:ring-red-300" : ""}`}
                                         min="0"
                                         step="0.01"
                                         required
                                     />
+                                    {fieldErrors.preco && (
+                                        <p className="mt-1 text-xs text-red-500">{fieldErrors.preco}</p>
+                                    )}
                                 </div>
                             </div>
                         </div>
