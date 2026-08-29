@@ -1,4 +1,4 @@
-import { BarChart, Calendar, Gift, MessageCircle, Users } from "lucide-react";
+import { BarChart, Gift, MessageCircle, UserCheck, Users, Wallet } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { statsApi } from "../../services/api";
@@ -68,7 +68,7 @@ const AdminEstatisticas = () => {
                                 <p className="text-sm text-gray-600">Total de Confirmações</p>
                                 <h3 className="text-2xl font-bold">{stats?.total_confirmacoes}</h3>
                             </div>
-                            <Users className="w-8 h-8 text-primary-500" />
+                            <UserCheck className="w-8 h-8 text-primary-500" />
                         </div>
                     </div>
 
@@ -78,7 +78,7 @@ const AdminEstatisticas = () => {
                                 <p className="text-sm text-gray-600">Total de Convidados</p>
                                 <h3 className="text-2xl font-bold">{stats?.total_convidados}</h3>
                             </div>
-                            <Calendar className="w-8 h-8 text-primary-500" />
+                            <Users className="w-8 h-8 text-primary-500" />
                         </div>
                     </div>
 
@@ -102,7 +102,7 @@ const AdminEstatisticas = () => {
                                     {formatCurrency(stats?.valor_resgatado_itens || 0)}
                                 </h3>
                             </div>
-                            <Gift className="w-8 h-8 text-secondary-500" />
+                            <Wallet className="w-8 h-8 text-secondary-500" />
                         </div>
                     </div>
                 </div>
