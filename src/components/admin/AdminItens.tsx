@@ -1,7 +1,9 @@
 import { Edit2, ExternalLink, Image as ImageIcon, Loader2, Package, Plus, Search, SlidersHorizontal, Trash2, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import ItemModal from "../ItemModal";
+import ConfirmDialog from "../ConfirmDialog";
 import { useAdminItems } from "../../hooks/useAdminItems";
+import { useConfirmDialog } from "../../hooks/useConfirmDialog";
 import type { CreateItemRequest, Item } from "../../types";
 import { CATEGORIAS } from "../../types";
 import { formatCurrency } from "../../utils/format";
@@ -15,6 +17,7 @@ const AdminItens = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState<Item | undefined>(undefined);
     const [imgErrors, setImgErrors] = useState<Record<number, boolean>>({});
+    const deleteConfirm = useConfirmDialog<Item>();
 
     const [busca, setBusca] = useState("");
     const [categoria, setCategoria] = useState("todas");
@@ -33,6 +36,13 @@ const AdminItens = () => {
             setIsModalOpen(false);
             setSelectedItem(undefined);
         }
+    };
+
+    const handleDeleteItem = async () => {
+        const item = deleteConfirm.target;
+        if (!item) return;
+        await deleteItem(item.id);
+        deleteConfirm.cancel();
     };
 
     const filteredItems = useMemo(() => {
@@ -289,11 +299,7 @@ const AdminItens = () => {
                                         Editar
                                     </button>
                                     <button
-                                        onClick={() => {
-                                            if (confirm("Tem certeza que deseja excluir este item?")) {
-                                                deleteItem(item.id);
-                                            }
-                                        }}
+                                        onClick={() => deleteConfirm.request(item)}
                                         disabled={loadingItemId === item.id}
                                         className="inline-flex justify-center items-center p-2 text-red-600 bg-red-50 rounded-lg transition-colors hover:text-white hover:bg-red-600 disabled:opacity-60 disabled:cursor-not-allowed"
                                         aria-label="Excluir item"
@@ -320,6 +326,16 @@ const AdminItens = () => {
                 onSubmit={selectedItem ? handleEditItem : handleCreateItem}
                 item={selectedItem}
                 title={selectedItem ? "Editar Item" : "Adicionar Novo Item"}
+            />
+
+            <ConfirmDialog
+                isOpen={deleteConfirm.isOpen}
+                title="Excluir item?"
+                message={`Tem certeza que deseja excluir "${deleteConfirm.target?.nome}"? Essa ação não pode ser desfeita.`}
+                confirmLabel="Excluir"
+                loading={loadingItemId === deleteConfirm.target?.id}
+                onConfirm={handleDeleteItem}
+                onCancel={deleteConfirm.cancel}
             />
         </div>
     );

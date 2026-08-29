@@ -1,14 +1,20 @@
-import { Baby, Loader2, Trash2, UserCheck, Users } from "lucide-react";
+import { Baby, Edit2, Loader2, Trash2, UserCheck, Users } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { confirmacoesApi } from "../../services/api";
 import type { Confirmacao } from "../../types";
+import ConfirmDialog from "../ConfirmDialog";
+import ConfirmacaoModal, { type ConfirmacaoFormData } from "../ConfirmacaoModal";
+import { useConfirmDialog } from "../../hooks/useConfirmDialog";
 
 const AdminConfirmacoes = () => {
     const [confirmacoes, setConfirmacoes] = useState<Confirmacao[]>([]);
     const [loading, setLoading] = useState(true);
     const [deletingId, setDeletingId] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedConfirmacao, setSelectedConfirmacao] = useState<Confirmacao | undefined>(undefined);
+    const deleteConfirm = useConfirmDialog<Confirmacao>();
 
     const loadConfirmacoes = useCallback(async () => {
         try {
@@ -28,17 +34,37 @@ const AdminConfirmacoes = () => {
         loadConfirmacoes();
     }, [loadConfirmacoes]);
 
-    const handleDeletar = async (id: number) => {
-        if (!confirm("Tem certeza que deseja deletar esta confirmação?")) return;
+    const handleDeletar = async () => {
+        const confirmacao = deleteConfirm.target;
+        if (!confirmacao) return;
         try {
-            setDeletingId(id);
-            await confirmacoesApi.deleteConfirmacao(id);
+            setDeletingId(confirmacao.id);
+            await confirmacoesApi.deleteConfirmacao(confirmacao.id);
             toast.success("Confirmação deletada!");
-            setConfirmacoes((prev) => prev.filter((c) => c.id !== id));
+            setConfirmacoes((prev) => prev.filter((c) => c.id !== confirmacao.id));
         } catch {
             toast.error("Erro ao deletar confirmação");
         } finally {
             setDeletingId(null);
+            deleteConfirm.cancel();
+        }
+    };
+
+    const openEdit = (confirmacao: Confirmacao) => {
+        setSelectedConfirmacao(confirmacao);
+        setIsModalOpen(true);
+    };
+
+    const handleEditar = async (data: ConfirmacaoFormData) => {
+        if (!selectedConfirmacao) return;
+        try {
+            const updated = await confirmacoesApi.updateConfirmacao(selectedConfirmacao.id, data);
+            setConfirmacoes((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+            toast.success("Confirmação atualizada com sucesso!");
+            setIsModalOpen(false);
+            setSelectedConfirmacao(undefined);
+        } catch {
+            toast.error("Erro ao atualizar confirmação");
         }
     };
 
@@ -148,11 +174,22 @@ const AdminConfirmacoes = () => {
                                 <p className="text-xs text-gray-400">pessoa{c.quantidade_adultos + c.quantidade_criancas !== 1 ? "s" : ""}</p>
                             </div>
 
+                            {/* Editar */}
+                            <button
+                                onClick={() => openEdit(c)}
+                                disabled={deletingId === c.id}
+                                className="flex-shrink-0 p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-500 transition-colors disabled:opacity-50"
+                                aria-label="Editar confirmação"
+                            >
+                                <Edit2 className="w-4 h-4" />
+                            </button>
+
                             {/* Deletar */}
                             <button
-                                onClick={() => handleDeletar(c.id)}
+                                onClick={() => deleteConfirm.request(c)}
                                 disabled={deletingId === c.id}
                                 className="flex-shrink-0 p-2 rounded-lg text-red-400 hover:text-white hover:bg-red-500 transition-colors disabled:opacity-50"
+                                aria-label="Deletar confirmação"
                             >
                                 {deletingId === c.id ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -164,6 +201,26 @@ const AdminConfirmacoes = () => {
                     ))}
                 </div>
             )}
+
+            <ConfirmacaoModal
+                isOpen={isModalOpen}
+                onClose={() => {
+                    setIsModalOpen(false);
+                    setSelectedConfirmacao(undefined);
+                }}
+                onSubmit={handleEditar}
+                confirmacao={selectedConfirmacao}
+            />
+
+            <ConfirmDialog
+                isOpen={deleteConfirm.isOpen}
+                title="Deletar confirmação?"
+                message={`Tem certeza que deseja deletar a confirmação de ${deleteConfirm.target?.nome}? Essa ação não pode ser desfeita.`}
+                confirmLabel="Deletar"
+                loading={deletingId === deleteConfirm.target?.id}
+                onConfirm={handleDeletar}
+                onCancel={deleteConfirm.cancel}
+            />
         </div>
     );
 };

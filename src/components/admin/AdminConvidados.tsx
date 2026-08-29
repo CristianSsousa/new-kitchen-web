@@ -19,7 +19,9 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import ConvidadoModal from "../ConvidadoModal";
+import ConfirmDialog from "../ConfirmDialog";
 import { useAdminConvidados } from "../../hooks/useAdminConvidados";
+import { useConfirmDialog } from "../../hooks/useConfirmDialog";
 import { confirmacoesApi } from "../../services/api";
 import type { Convidado, CreateConvidadoRequest } from "../../types";
 
@@ -43,6 +45,8 @@ const AdminConvidados = () => {
     const [shareMenuId, setShareMenuId] = useState<number | null>(null);
     const shareMenuRef = useRef<HTMLDivElement>(null);
     const PER_PAGE = 10;
+    const deleteConfirm = useConfirmDialog<Convidado>();
+    const regenerarConfirm = useConfirmDialog<Convidado>();
 
     const loadConfirmados = useCallback(async () => {
         try {
@@ -87,6 +91,20 @@ const AdminConvidados = () => {
     const openNew = () => {
         setSelectedConvidado(undefined);
         setIsModalOpen(true);
+    };
+
+    const handleRegenerarCodigo = async () => {
+        const convidado = regenerarConfirm.target;
+        if (!convidado) return;
+        await regenerarCodigo(convidado.id);
+        regenerarConfirm.cancel();
+    };
+
+    const handleDeleteConvidado = async () => {
+        const convidado = deleteConfirm.target;
+        if (!convidado) return;
+        await deleteConvidado(convidado.id);
+        deleteConfirm.cancel();
     };
 
     const buildGuestLink = (codigo: string) =>
@@ -314,11 +332,7 @@ const AdminConvidados = () => {
                                 {/* Ações */}
                                 <div className="flex items-center justify-end gap-1 pt-1 border-t border-gray-100">
                                     <button
-                                        onClick={async () => {
-                                            if (window.confirm("Gerar novo código? O código atual ficará inválido.")) {
-                                                await regenerarCodigo(convidado.id);
-                                            }
-                                        }}
+                                        onClick={() => regenerarConfirm.request(convidado)}
                                         disabled={isLoading}
                                         className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-orange-600 rounded-lg hover:bg-orange-50 transition-colors disabled:opacity-50"
                                         title="Regenerar código"
@@ -338,11 +352,7 @@ const AdminConvidados = () => {
                                         Editar
                                     </button>
                                     <button
-                                        onClick={async () => {
-                                            if (window.confirm("Remover este convidado?")) {
-                                                await deleteConvidado(convidado.id);
-                                            }
-                                        }}
+                                        onClick={() => deleteConfirm.request(convidado)}
                                         disabled={isLoading}
                                         className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
                                     >
@@ -407,6 +417,27 @@ const AdminConvidados = () => {
                 onSubmit={handleSubmit}
                 convidado={selectedConvidado}
                 title={selectedConvidado ? "Editar Convidado" : "Novo Convidado"}
+            />
+
+            <ConfirmDialog
+                isOpen={regenerarConfirm.isOpen}
+                title="Gerar novo código?"
+                message={`O código atual de ${regenerarConfirm.target?.nome} ficará inválido e o link de acesso enviado anteriormente deixará de funcionar.`}
+                confirmLabel="Gerar novo código"
+                danger={false}
+                loading={loadingConvidadoId === regenerarConfirm.target?.id}
+                onConfirm={handleRegenerarCodigo}
+                onCancel={regenerarConfirm.cancel}
+            />
+
+            <ConfirmDialog
+                isOpen={deleteConfirm.isOpen}
+                title="Remover convidado?"
+                message={`Tem certeza que deseja remover ${deleteConfirm.target?.nome}? Essa ação não pode ser desfeita.`}
+                confirmLabel="Remover"
+                loading={loadingConvidadoId === deleteConfirm.target?.id}
+                onConfirm={handleDeleteConvidado}
+                onCancel={deleteConfirm.cancel}
             />
         </div>
     );
