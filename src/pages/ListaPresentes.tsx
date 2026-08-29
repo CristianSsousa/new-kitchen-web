@@ -65,7 +65,9 @@ const ListaPresentes = () => {
 
     const cancelarOwnResgate = async (id: number) => {
         if (loadingItemId !== null) return;
-        const success = await cancelarResgate(id);
+        const success = await cancelarResgate(id, {
+            codigo_convidado: convidado?.codigo_unico,
+        });
         if (success && convidado) {
             await refreshStats();
         }

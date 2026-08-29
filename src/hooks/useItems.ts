@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { itemsApi } from "../services/api";
-import type { CreateItemRequest, Item, ResgatarItemRequest } from "../types";
+import type { CancelaResgateRequest, CreateItemRequest, Item, ResgatarItemRequest } from "../types";
 import { handleApiError } from "../utils/errors";
 
 export const useItems = () => {
@@ -75,10 +75,10 @@ export const useItems = () => {
         }
     };
 
-    const cancelarResgate = async (id: number): Promise<boolean> => {
+    const cancelarResgate = async (id: number, request: CancelaResgateRequest): Promise<boolean> => {
         try {
             setLoadingItemId(id);
-            const updatedItem = await itemsApi.cancelaResgate(id);
+            const updatedItem = await itemsApi.cancelaResgate(id, request);
             setItems((prev) => prev.map((item) => (item.id === id ? { ...item, ...updatedItem } : item)));
             toast.success("Reserva cancelada com sucesso! ↩️");
             return true;

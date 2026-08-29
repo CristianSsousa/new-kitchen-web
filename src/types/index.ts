@@ -90,6 +90,10 @@ export interface ResgatarItemRequest {
     codigo_convidado?: string;
 }
 
+export interface CancelaResgateRequest {
+    codigo_convidado?: string;
+}
+
 export interface CreateItemRequest {
     nome: string;
     descricao: string;

@@ -1,6 +1,7 @@
 import axios from "axios";
 import { STORAGE_KEYS } from "../constants/storage";
 import type {
+    CancelaResgateRequest,
     Confirmacao,
     Convidado,
     ConvidadoPublico,
@@ -80,9 +81,12 @@ export const itemsApi = {
         return response.data.item ?? response.data;
     },
 
-    // Cancelar resgate de um item (público)
-    cancelaResgate: async (id: number): Promise<Item> => {
-        const response = await api.post(`/items/${id}/cancela-resgate`);
+    // Cancelar resgate de um item (público, apenas pelo convidado que reservou)
+    cancelaResgate: async (
+        id: number,
+        data: CancelaResgateRequest
+    ): Promise<Item> => {
+        const response = await api.post(`/items/${id}/cancela-resgate`, data);
         return response.data.item ?? response.data;
     },
 };
