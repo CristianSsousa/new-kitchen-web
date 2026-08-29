@@ -25,4 +25,13 @@ describe("getErrorMessage", () => {
         const axiosErr = { response: { data: {} } };
         expect(getErrorMessage(axiosErr, "fallback")).toBe("fallback");
     });
+
+    it("prioriza response.data.error mesmo quando o erro é uma instância de Error (caso real do AxiosError)", () => {
+        // AxiosError estende Error de verdade, então esse é o formato real
+        // que axios lança — um objeto simples não seria pego pelo bug original.
+        const axiosErr = Object.assign(new Error("Request failed with status code 400"), {
+            response: { data: { error: "Item já foi resgatado" } },
+        });
+        expect(getErrorMessage(axiosErr, "fallback")).toBe("Item já foi resgatado");
+    });
 });
