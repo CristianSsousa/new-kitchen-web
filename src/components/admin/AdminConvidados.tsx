@@ -124,7 +124,7 @@ const AdminConvidados = () => {
 
     const shareWhatsApp = (convidado: Convidado) => {
         const link = buildGuestLink(convidado.codigo_unico);
-        const msg = `Oi, ${convidado.nome}! Que alegria ter você no nosso evento! Acesse pelo link abaixo para confirmar presença e dar uma espiadinha na lista de presentes.\n${link}\n\nMal podemos esperar para te ver!`;
+        const msg = `Oi, ${convidado.nome}! 🎀 Que alegria ter você no nosso evento! Acesse pelo link abaixo para confirmar presença e dar uma espiadinha na lista de presentes 😍\n${link}\n\nMal podemos esperar para te ver! 💕`;
         const phone = convidado.telefone?.replace(/\D/g, "");
         const url = phone
             ? `https://wa.me/55${phone}?text=${encodeURIComponent(msg)}`
@@ -136,9 +136,9 @@ const AdminConvidados = () => {
     const shareEmail = (convidado: Convidado) => {
         const link = buildGuestLink(convidado.codigo_unico);
         const nome = convidado.nome.split(" ")[0];
-        const subject = encodeURIComponent("Seu acesso exclusivo ao nosso evento");
+        const subject = encodeURIComponent("Seu acesso exclusivo ao nosso evento 💕");
         const body = encodeURIComponent(
-            `Olá, ${nome}!\n\nAcesse sua área exclusiva do nosso evento pelo link abaixo:\n${link}\n\nCom ele você pode confirmar presença, ver a lista de presentes e deixar uma mensagem.\n\nAté breve!`
+            `Olá, ${nome}!\n\nAcesse sua área exclusiva do nosso evento pelo link abaixo:\n${link}\n\nCom ele você pode confirmar presença, ver a lista de presentes e deixar uma mensagem.\n\nAté breve! 🎉`
         );
         const to = convidado.email ? encodeURIComponent(convidado.email) : "";
         window.open(`mailto:${to}?subject=${subject}&body=${body}`, "_self");
