@@ -126,9 +126,12 @@ const AdminConvidados = () => {
         const link = buildGuestLink(convidado.codigo_unico);
         const msg = `Oi, ${convidado.nome}! 🎀 Que alegria ter você no nosso evento! Acesse pelo link abaixo para confirmar presença e dar uma espiadinha na lista de presentes 😍\n${link}\n\nMal podemos esperar para te ver! 💕`;
         const phone = convidado.telefone?.replace(/\D/g, "");
+        // web.whatsapp.com (em vez de wa.me/api.whatsapp.com) evita o
+        // hand-off pro app nativo do WhatsApp Desktop, que é onde o texto
+        // com emoji vinha chegando corrompido (�) em alguns testes.
         const url = phone
-            ? `https://wa.me/55${phone}?text=${encodeURIComponent(msg)}`
-            : `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+            ? `https://web.whatsapp.com/send?phone=55${phone}&text=${encodeURIComponent(msg)}`
+            : `https://web.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
         window.open(url, "_blank", "noopener,noreferrer");
         setShareMenuId(null);
     };
