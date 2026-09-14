@@ -14,6 +14,7 @@ import {
     UserCheck,
     UserCircle2,
     Users,
+    UserX,
     X,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -37,7 +38,7 @@ const AdminConvidados = () => {
         regenerarCodigo,
     } = useAdminConvidados();
 
-    const [confirmadosIds, setConfirmadosIds] = useState<Set<number>>(new Set());
+    const [rsvpByConvidadoId, setRsvpByConvidadoId] = useState<Map<number, boolean>>(new Map());
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedConvidado, setSelectedConvidado] = useState<Convidado | undefined>(undefined);
     const [search, setSearch] = useState("");
@@ -52,7 +53,7 @@ const AdminConvidados = () => {
     const loadConfirmados = useCallback(async () => {
         try {
             const confs = await confirmacoesApi.getConfirmacoes();
-            setConfirmadosIds(new Set(confs.map((c) => c.convidado_id)));
+            setRsvpByConvidadoId(new Map(confs.map((c) => [c.convidado_id, c.attending])));
         } catch {
             // não crítico
         }
@@ -122,18 +123,28 @@ const AdminConvidados = () => {
         setShareMenuId(null);
     };
 
-    const shareWhatsApp = (convidado: Convidado) => {
-        const link = buildGuestLink(convidado.codigo_unico);
-        const msg = `Oi, ${convidado.nome}! 🎀 Que alegria ter você no nosso evento! Acesse pelo link abaixo para confirmar presença e dar uma espiadinha na lista de presentes 😍\n${link}\n\nMal podemos esperar para te ver! 💕`;
+    // web.whatsapp.com (em vez de wa.me/api.whatsapp.com) evita o
+    // hand-off pro app nativo do WhatsApp Desktop, que é onde o texto
+    // com emoji vinha chegando corrompido (�) em alguns testes.
+    const openWhatsApp = (convidado: Convidado, msg: string) => {
         const phone = convidado.telefone?.replace(/\D/g, "");
-        // web.whatsapp.com (em vez de wa.me/api.whatsapp.com) evita o
-        // hand-off pro app nativo do WhatsApp Desktop, que é onde o texto
-        // com emoji vinha chegando corrompido (�) em alguns testes.
         const url = phone
             ? `https://web.whatsapp.com/send?phone=55${phone}&text=${encodeURIComponent(msg)}`
             : `https://web.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
         window.open(url, "_blank", "noopener,noreferrer");
         setShareMenuId(null);
+    };
+
+    const shareWhatsApp = (convidado: Convidado) => {
+        const link = buildGuestLink(convidado.codigo_unico);
+        const msg = `Oi, ${convidado.nome}! 🎀 Que alegria ter você no nosso evento! Acesse pelo link abaixo para confirmar presença e dar uma espiadinha na lista de presentes 😍\n${link}\n\nMal podemos esperar para te ver! 💕`;
+        openWhatsApp(convidado, msg);
+    };
+
+    const shareAttendanceReminder = (convidado: Convidado) => {
+        const link = buildGuestLink(convidado.codigo_unico);
+        const msg = `Oi, ${convidado.nome}! Passando aqui pra saber: você vai poder vir no nosso Chá de Casa Nova? 🥰 Se ainda não confirmou, é só entrar no link abaixo e nos contar!\n${link}\n\nContamos com você! 💕`;
+        openWhatsApp(convidado, msg);
     };
 
     const shareEmail = (convidado: Convidado) => {
@@ -182,7 +193,7 @@ const AdminConvidados = () => {
     const currentPage = Math.min(page, totalPages);
     const paginated = filtered.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
 
-    const totalConfirmados = convidados.filter((c) => confirmadosIds.has(c.id)).length;
+    const totalConfirmados = convidados.filter((c) => rsvpByConvidadoId.get(c.id) === true).length;
 
     return (
         <div className="space-y-6">
@@ -284,13 +295,15 @@ const AdminConvidados = () => {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {paginated.map((convidado) => {
-                        const confirmado = confirmadosIds.has(convidado.id);
+                        const rsvp = rsvpByConvidadoId.get(convidado.id);
+                        const confirmado = rsvp === true;
+                        const naoVai = rsvp === false;
                         const isLoading = loadingConvidadoId === convidado.id;
 
                         return (
                             <div
                                 key={convidado.id}
-                                className={`card p-5 flex flex-col gap-4 ${confirmado ? "border-green-200" : ""}`}
+                                className={`card p-5 flex flex-col gap-4 ${confirmado ? "border-green-200" : naoVai ? "border-red-200" : ""} ${shareMenuId === convidado.id ? "relative z-10" : ""}`}
                             >
                                 {/* Topo: avatar + nome + badge */}
                                 <div className="flex items-start justify-between gap-3">
@@ -319,6 +332,12 @@ const AdminConvidados = () => {
                                         <span className="flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 border border-green-200">
                                             <CheckCircle2 className="w-3 h-3" />
                                             Confirmado
+                                        </span>
+                                    )}
+                                    {naoVai && (
+                                        <span className="flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">
+                                            <UserX className="w-3 h-3" />
+                                            Não vai
                                         </span>
                                     )}
                                 </div>
@@ -367,6 +386,15 @@ const AdminConvidados = () => {
                                                     >
                                                         <Mail className="w-3.5 h-3.5 text-blue-500" />
                                                         E-mail
+                                                    </button>
+                                                )}
+                                                {rsvp === undefined && (
+                                                    <button
+                                                        onClick={() => shareAttendanceReminder(convidado)}
+                                                        className="flex items-center gap-2.5 w-full px-3 py-2 text-gray-700 hover:bg-orange-50 transition-colors border-t border-gray-100"
+                                                    >
+                                                        <UserCheck className="w-3.5 h-3.5 text-orange-500" />
+                                                        Cobrar confirmação
                                                     </button>
                                                 )}
                                             </div>

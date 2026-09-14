@@ -26,6 +26,7 @@ export interface Confirmacao {
     id: number;
     convidado_id: number;
     nome: string;
+    attending: boolean;
     quantidade_adultos: number;
     quantidade_criancas: number;
     criada_em: string;
@@ -102,6 +103,7 @@ export interface CreateMensagemRequest {
 
 export interface CreateConfirmacaoRequest {
     nome?: string;
+    attending?: boolean;
     quantidade_adultos: number;
     quantidade_criancas: number;
     codigo_convidado?: string;

@@ -1,8 +1,9 @@
-import { Baby, CheckCircle2, Heart, Loader2, Minus, Plus, Users, X } from "lucide-react";
+import { Baby, CheckCircle2, Heart, Loader2, Minus, Plus, UserX, Users, X } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { confirmacoesApi } from "../services/api";
 import { useConvidado } from "../contexts/ConvidadoContext";
+import ConfirmDialog from "../components/ConfirmDialog";
 
 const Counter = ({
     value,
@@ -37,15 +38,20 @@ const Counter = ({
 
 const Confirmacao = () => {
     const [loading, setLoading] = useState(false);
+    const [declining, setDeclining] = useState(false);
     const [cancelling, setCancelling] = useState(false);
     const [showModal, setShowModal] = useState(false);
+    const [showDeclineConfirm, setShowDeclineConfirm] = useState(false);
+    const [wantsToChangeMind, setWantsToChangeMind] = useState(false);
     const { convidado, stats, refreshStats } = useConvidado();
     const [formData, setFormData] = useState({
         quantidade_adultos: 1,
         quantidade_criancas: 0,
     });
 
-    const jaTemConfirmacao = stats?.tem_confirmacao;
+    const hasResponse = stats?.tem_confirmacao;
+    const isAttending = stats?.confirmacao?.attending;
+    const showForm = !hasResponse || wantsToChangeMind;
     const total = formData.quantidade_adultos + formData.quantidade_criancas;
 
     const handleCancelar = async () => {
@@ -54,6 +60,7 @@ const Confirmacao = () => {
             setCancelling(true);
             await confirmacoesApi.cancelarConfirmacao(convidado.codigo_unico);
             toast.success("Confirmação cancelada.");
+            setWantsToChangeMind(false);
             await refreshStats();
         } catch {
             toast.error("Erro ao cancelar confirmação. Tente novamente.");
@@ -67,15 +74,36 @@ const Confirmacao = () => {
             setLoading(true);
             await confirmacoesApi.createConfirmacao({
                 ...formData,
+                attending: true,
                 codigo_convidado: convidado?.codigo_unico,
             });
             toast.success("Que alegria! Sua presença foi confirmada! 🎉");
             setShowModal(false);
+            setWantsToChangeMind(false);
             await refreshStats();
         } catch {
             toast.error("Erro ao enviar confirmação. Tente novamente.");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDecline = async () => {
+        try {
+            setDeclining(true);
+            await confirmacoesApi.createConfirmacao({
+                attending: false,
+                quantidade_adultos: 0,
+                quantidade_criancas: 0,
+                codigo_convidado: convidado?.codigo_unico,
+            });
+            toast.success("Tudo bem, obrigado por avisar!");
+            setShowDeclineConfirm(false);
+            await refreshStats();
+        } catch {
+            toast.error("Erro ao enviar resposta. Tente novamente.");
+        } finally {
+            setDeclining(false);
         }
     };
 
@@ -90,52 +118,15 @@ const Confirmacao = () => {
                     </div>
                     <h1 className="title-romantic mb-2">Confirmação de Presença</h1>
                     <p className="text-gray-500 text-sm">
-                        {jaTemConfirmacao
+                        {showForm
+                            ? `Olá, ${convidado?.nome.split(" ")[0]}! Confirme sua presença abaixo 💕`
+                            : isAttending
                             ? `Olá, ${convidado?.nome.split(" ")[0]}! Sua presença já está confirmada 🎉`
-                            : `Olá, ${convidado?.nome.split(" ")[0]}! Confirme sua presença abaixo 💕`}
+                            : `Olá, ${convidado?.nome.split(" ")[0]}! Recebemos sua resposta`}
                     </p>
                 </div>
 
-                {jaTemConfirmacao && stats?.confirmacao ? (
-                    /* ── Já confirmado ── */
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                        <div className="bg-gradient-to-r from-green-500 to-emerald-500 px-6 py-5 text-white text-center">
-                            <CheckCircle2 className="w-10 h-10 mx-auto mb-2 opacity-90" />
-                            <p className="font-bold text-lg">Presença Confirmada!</p>
-                            <p className="text-green-100 text-sm mt-0.5">Mal podemos esperar para te ver 💕</p>
-                        </div>
-                        <div className="p-6 space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-gray-50 rounded-xl p-4 text-center">
-                                    <div className="flex items-center justify-center gap-1.5 text-gray-500 text-xs mb-1">
-                                        <Users className="w-3.5 h-3.5" /> Adultos
-                                    </div>
-                                    <p className="text-3xl font-bold text-gray-800">{stats.confirmacao.quantidade_adultos}</p>
-                                </div>
-                                <div className="bg-gray-50 rounded-xl p-4 text-center">
-                                    <div className="flex items-center justify-center gap-1.5 text-gray-500 text-xs mb-1">
-                                        <Baby className="w-3.5 h-3.5" /> Crianças
-                                    </div>
-                                    <p className="text-3xl font-bold text-gray-800">{stats.confirmacao.quantidade_criancas}</p>
-                                </div>
-                            </div>
-                            <div className="bg-primary-50 rounded-xl px-4 py-3 flex items-center justify-between">
-                                <span className="text-sm font-medium text-primary-700">Total de pessoas</span>
-                                <span className="text-2xl font-bold text-primary-700">
-                                    {stats.confirmacao.quantidade_adultos + stats.confirmacao.quantidade_criancas}
-                                </span>
-                            </div>
-                            <button
-                                onClick={handleCancelar}
-                                disabled={cancelling}
-                                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium text-red-500 border border-red-200 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {cancelling ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
-                                {cancelling ? "Cancelando..." : "Cancelar confirmação"}
-                            </button>
-                        </div>
-                    </div>
-                ) : (
+                {showForm ? (
                     /* ── Formulário ── */
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                         <div className="h-1.5 bg-gradient-to-r from-primary-400 via-secondary-400 to-romantic-gold" />
@@ -193,6 +184,91 @@ const Confirmacao = () => {
                             >
                                 <Heart className="w-5 h-5" />
                                 Confirmar Presença
+                            </button>
+
+                            {/* Botão — não vou poder ir */}
+                            <button
+                                type="button"
+                                onClick={() => setShowDeclineConfirm(true)}
+                                className="w-full py-2.5 rounded-xl text-sm font-medium text-gray-500 border border-gray-200 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                            >
+                                <UserX className="w-4 h-4" />
+                                Não vou poder ir
+                            </button>
+
+                            {wantsToChangeMind && (
+                                <button
+                                    type="button"
+                                    onClick={() => setWantsToChangeMind(false)}
+                                    className="w-full text-center text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                                >
+                                    Cancelar e voltar
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                ) : isAttending ? (
+                    /* ── Confirmado ── */
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div className="bg-gradient-to-r from-green-500 to-emerald-500 px-6 py-5 text-white text-center">
+                            <CheckCircle2 className="w-10 h-10 mx-auto mb-2 opacity-90" />
+                            <p className="font-bold text-lg">Presença Confirmada!</p>
+                            <p className="text-green-100 text-sm mt-0.5">Mal podemos esperar para te ver 💕</p>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="bg-gray-50 rounded-xl p-4 text-center">
+                                    <div className="flex items-center justify-center gap-1.5 text-gray-500 text-xs mb-1">
+                                        <Users className="w-3.5 h-3.5" /> Adultos
+                                    </div>
+                                    <p className="text-3xl font-bold text-gray-800">{stats?.confirmacao?.quantidade_adultos}</p>
+                                </div>
+                                <div className="bg-gray-50 rounded-xl p-4 text-center">
+                                    <div className="flex items-center justify-center gap-1.5 text-gray-500 text-xs mb-1">
+                                        <Baby className="w-3.5 h-3.5" /> Crianças
+                                    </div>
+                                    <p className="text-3xl font-bold text-gray-800">{stats?.confirmacao?.quantidade_criancas}</p>
+                                </div>
+                            </div>
+                            <div className="bg-primary-50 rounded-xl px-4 py-3 flex items-center justify-between">
+                                <span className="text-sm font-medium text-primary-700">Total de pessoas</span>
+                                <span className="text-2xl font-bold text-primary-700">
+                                    {(stats?.confirmacao?.quantidade_adultos ?? 0) + (stats?.confirmacao?.quantidade_criancas ?? 0)}
+                                </span>
+                            </div>
+                            <button
+                                onClick={handleCancelar}
+                                disabled={cancelling}
+                                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium text-red-500 border border-red-200 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {cancelling ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
+                                {cancelling ? "Cancelando..." : "Cancelar confirmação"}
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    /* ── Recusado ── */
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div className="bg-gradient-to-r from-gray-500 to-gray-600 px-6 py-5 text-white text-center">
+                            <UserX className="w-10 h-10 mx-auto mb-2 opacity-90" />
+                            <p className="font-bold text-lg">Você marcou que não vai poder ir</p>
+                            <p className="text-gray-200 text-sm mt-0.5">Sentiremos sua falta 😢</p>
+                        </div>
+                        <div className="p-6 space-y-3">
+                            <button
+                                onClick={() => setWantsToChangeMind(true)}
+                                className="w-full bg-gradient-to-r from-primary-500 to-primary-600 text-white py-3 px-6 rounded-xl font-medium hover:from-primary-600 hover:to-primary-700 transition-all duration-200 flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+                            >
+                                <Heart className="w-5 h-5" />
+                                Mudei de ideia, vou sim!
+                            </button>
+                            <button
+                                onClick={handleCancelar}
+                                disabled={cancelling}
+                                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {cancelling ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                                {cancelling ? "Removendo..." : "Remover minha resposta"}
                             </button>
                         </div>
                     </div>
@@ -281,6 +357,17 @@ const Confirmacao = () => {
                     </div>
                 </div>
             )}
+
+            <ConfirmDialog
+                isOpen={showDeclineConfirm}
+                title="Não vai poder comparecer?"
+                message="Tudo bem, obrigado por avisar! Você pode mudar de ideia depois, se precisar."
+                confirmLabel="Confirmar que não vou"
+                danger={false}
+                loading={declining}
+                onConfirm={handleDecline}
+                onCancel={() => setShowDeclineConfirm(false)}
+            />
         </div>
     );
 };

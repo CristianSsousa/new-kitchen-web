@@ -1,4 +1,4 @@
-import { Baby, Edit2, Loader2, Trash2, UserCheck, Users } from "lucide-react";
+import { Baby, Edit2, Loader2, Trash2, UserCheck, UserX, Users } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { confirmacoesApi } from "../../services/api";
@@ -7,6 +7,8 @@ import ConfirmDialog from "../ConfirmDialog";
 import ConfirmacaoModal, { type ConfirmacaoFormData } from "../ConfirmacaoModal";
 import { useConfirmDialog } from "../../hooks/useConfirmDialog";
 
+type FiltroStatus = "todas" | "confirmados" | "nao_vao";
+
 const AdminConfirmacoes = () => {
     const [confirmacoes, setConfirmacoes] = useState<Confirmacao[]>([]);
     const [loading, setLoading] = useState(true);
@@ -14,6 +16,7 @@ const AdminConfirmacoes = () => {
     const [error, setError] = useState<string | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedConfirmacao, setSelectedConfirmacao] = useState<Confirmacao | undefined>(undefined);
+    const [filtro, setFiltro] = useState<FiltroStatus>("todas");
     const deleteConfirm = useConfirmDialog<Confirmacao>();
 
     const loadConfirmacoes = useCallback(async () => {
@@ -71,6 +74,14 @@ const AdminConfirmacoes = () => {
     const totalAdultos = confirmacoes.reduce((s, c) => s + c.quantidade_adultos, 0);
     const totalCriancas = confirmacoes.reduce((s, c) => s + c.quantidade_criancas, 0);
     const totalPessoas = totalAdultos + totalCriancas;
+    const totalConfirmados = confirmacoes.filter((c) => c.attending).length;
+    const totalNaoVao = confirmacoes.filter((c) => !c.attending).length;
+
+    const confirmacoesFiltradas = confirmacoes.filter((c) => {
+        if (filtro === "confirmados") return c.attending;
+        if (filtro === "nao_vao") return !c.attending;
+        return true;
+    });
 
     const getInitials = (nome: string) =>
         nome.split(" ").slice(0, 2).map((n) => n[0]).join("").toUpperCase();
@@ -88,8 +99,17 @@ const AdminConfirmacoes = () => {
                                 <UserCheck className="w-3.5 h-3.5 text-primary-600" />
                             </div>
                             <div>
-                                <p className="text-xs text-gray-400">Confirmações</p>
-                                <p className="text-base font-bold text-gray-800 leading-tight">{confirmacoes.length}</p>
+                                <p className="text-xs text-gray-400">Confirmados</p>
+                                <p className="text-base font-bold text-gray-800 leading-tight">{totalConfirmados}</p>
+                            </div>
+                        </div>
+                        <div className="card px-4 py-2.5 flex items-center gap-2.5">
+                            <div className="p-1.5 rounded-full bg-red-100">
+                                <UserX className="w-3.5 h-3.5 text-red-600" />
+                            </div>
+                            <div>
+                                <p className="text-xs text-gray-400">Não vão</p>
+                                <p className="text-base font-bold text-gray-800 leading-tight">{totalNaoVao}</p>
                             </div>
                         </div>
                         <div className="card px-4 py-2.5 flex items-center gap-2.5">
@@ -123,6 +143,31 @@ const AdminConfirmacoes = () => {
                 )}
             </div>
 
+            {/* Filtro de status */}
+            {!loading && !error && confirmacoes.length > 0 && (
+                <div className="flex gap-2">
+                    {(
+                        [
+                            { key: "todas", label: `Todas (${confirmacoes.length})` },
+                            { key: "confirmados", label: `Vão (${totalConfirmados})` },
+                            { key: "nao_vao", label: `Não vão (${totalNaoVao})` },
+                        ] as const
+                    ).map(({ key, label }) => (
+                        <button
+                            key={key}
+                            onClick={() => setFiltro(key)}
+                            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                                filtro === key
+                                    ? "bg-primary-500 text-white"
+                                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                            }`}
+                        >
+                            {label}
+                        </button>
+                    ))}
+                </div>
+            )}
+
             {/* Lista */}
             {loading ? (
                 <div className="space-y-3">
@@ -137,9 +182,14 @@ const AdminConfirmacoes = () => {
                     <UserCheck className="w-10 h-10 text-gray-300 mx-auto mb-3" />
                     <p className="text-gray-500">Nenhuma confirmação ainda</p>
                 </div>
+            ) : confirmacoesFiltradas.length === 0 ? (
+                <div className="text-center py-16">
+                    <UserCheck className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                    <p className="text-gray-500">Nenhuma confirmação nesse filtro</p>
+                </div>
             ) : (
                 <div className="space-y-3">
-                    {confirmacoes.map((c) => (
+                    {confirmacoesFiltradas.map((c) => (
                         <div
                             key={c.id}
                             className="card p-4 flex items-center gap-4"
@@ -152,27 +202,36 @@ const AdminConfirmacoes = () => {
                             {/* Nome */}
                             <div className="flex-1 min-w-0">
                                 <p className="font-semibold text-gray-800 truncate">{c.nome}</p>
-                                <div className="flex items-center gap-3 mt-0.5">
-                                    <span className="flex items-center gap-1 text-xs text-gray-500">
-                                        <Users className="w-3 h-3" />
-                                        {c.quantidade_adultos} adulto{c.quantidade_adultos !== 1 ? "s" : ""}
-                                    </span>
-                                    {c.quantidade_criancas > 0 && (
+                                {c.attending ? (
+                                    <div className="flex items-center gap-3 mt-0.5">
                                         <span className="flex items-center gap-1 text-xs text-gray-500">
-                                            <Baby className="w-3 h-3" />
-                                            {c.quantidade_criancas} criança{c.quantidade_criancas !== 1 ? "s" : ""}
+                                            <Users className="w-3 h-3" />
+                                            {c.quantidade_adultos} adulto{c.quantidade_adultos !== 1 ? "s" : ""}
                                         </span>
-                                    )}
-                                </div>
+                                        {c.quantidade_criancas > 0 && (
+                                            <span className="flex items-center gap-1 text-xs text-gray-500">
+                                                <Baby className="w-3 h-3" />
+                                                {c.quantidade_criancas} criança{c.quantidade_criancas !== 1 ? "s" : ""}
+                                            </span>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <span className="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-600 border border-red-100">
+                                        <UserX className="w-3 h-3" />
+                                        Não vai
+                                    </span>
+                                )}
                             </div>
 
                             {/* Total */}
-                            <div className="flex-shrink-0 text-center hidden sm:block">
-                                <p className="text-xl font-bold text-primary-600">
-                                    {c.quantidade_adultos + c.quantidade_criancas}
-                                </p>
-                                <p className="text-xs text-gray-400">pessoa{c.quantidade_adultos + c.quantidade_criancas !== 1 ? "s" : ""}</p>
-                            </div>
+                            {c.attending && (
+                                <div className="flex-shrink-0 text-center hidden sm:block">
+                                    <p className="text-xl font-bold text-primary-600">
+                                        {c.quantidade_adultos + c.quantidade_criancas}
+                                    </p>
+                                    <p className="text-xs text-gray-400">pessoa{c.quantidade_adultos + c.quantidade_criancas !== 1 ? "s" : ""}</p>
+                                </div>
+                            )}
 
                             {/* Editar */}
                             <button

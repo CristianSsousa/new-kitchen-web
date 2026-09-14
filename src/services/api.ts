@@ -145,6 +145,7 @@ export const confirmacoesApi = {
         id: number,
         confirmacao: {
             nome: string;
+            attending?: boolean;
             quantidade_adultos: number;
             quantidade_criancas: number;
         }
