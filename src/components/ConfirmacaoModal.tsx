@@ -1,9 +1,10 @@
-import { Baby, Users, X } from "lucide-react";
+import { Baby, UserCheck, UserX, Users, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { Confirmacao } from "../types";
 
 export interface ConfirmacaoFormData {
     nome: string;
+    attending: boolean;
     quantidade_adultos: number;
     quantidade_criancas: number;
 }
@@ -23,6 +24,7 @@ const ConfirmacaoModal = ({
 }: ConfirmacaoModalProps) => {
     const [formData, setFormData] = useState<ConfirmacaoFormData>({
         nome: "",
+        attending: true,
         quantidade_adultos: 1,
         quantidade_criancas: 0,
     });
@@ -34,6 +36,7 @@ const ConfirmacaoModal = ({
         if (confirmacao) {
             setFormData({
                 nome: confirmacao.nome,
+                attending: confirmacao.attending,
                 quantidade_adultos: confirmacao.quantidade_adultos,
                 quantidade_criancas: confirmacao.quantidade_criancas,
             });
@@ -53,8 +56,10 @@ const ConfirmacaoModal = ({
     const validate = (): boolean => {
         const errors: Record<string, string> = {};
         if (!formData.nome.trim()) errors.nome = "Nome é obrigatório";
-        if (formData.quantidade_adultos < 1) errors.quantidade_adultos = "Mínimo de 1 adulto";
-        if (formData.quantidade_criancas < 0) errors.quantidade_criancas = "Não pode ser negativo";
+        if (formData.attending) {
+            if (formData.quantidade_adultos < 1) errors.quantidade_adultos = "Mínimo de 1 adulto";
+            if (formData.quantidade_criancas < 0) errors.quantidade_criancas = "Não pode ser negativo";
+        }
         setFieldErrors(errors);
         return Object.keys(errors).length === 0;
     };
@@ -64,7 +69,11 @@ const ConfirmacaoModal = ({
         if (!validate()) return;
         try {
             setSubmitting(true);
-            await onSubmit(formData);
+            await onSubmit(
+                formData.attending
+                    ? formData
+                    : { ...formData, quantidade_adultos: 0, quantidade_criancas: 0 }
+            );
         } finally {
             setSubmitting(false);
         }
@@ -114,6 +123,35 @@ const ConfirmacaoModal = ({
                         )}
                     </div>
 
+                    <div>
+                        <label className="form-label">Vai comparecer?</label>
+                        <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+                            <button
+                                type="button"
+                                onClick={() => setFormData({ ...formData, attending: true })}
+                                className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-sm font-medium transition-colors ${
+                                    formData.attending
+                                        ? "bg-green-500 text-white"
+                                        : "bg-white text-gray-600 hover:bg-gray-50"
+                                }`}
+                            >
+                                <UserCheck className="w-4 h-4" /> Vai
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setFormData({ ...formData, attending: false })}
+                                className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-sm font-medium transition-colors ${
+                                    !formData.attending
+                                        ? "bg-gray-500 text-white"
+                                        : "bg-white text-gray-600 hover:bg-gray-50"
+                                }`}
+                            >
+                                <UserX className="w-4 h-4" /> Não vai
+                            </button>
+                        </div>
+                    </div>
+
+                    {formData.attending && (
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label htmlFor="quantidade_adultos" className="form-label flex items-center gap-1.5">
@@ -162,6 +200,7 @@ const ConfirmacaoModal = ({
                             )}
                         </div>
                     </div>
+                    )}
 
                     <div className="flex justify-end items-center gap-3 pt-4 border-t border-gray-100">
                         <button
