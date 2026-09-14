@@ -303,7 +303,7 @@ const AdminConvidados = () => {
                         return (
                             <div
                                 key={convidado.id}
-                                className={`card p-5 flex flex-col gap-4 ${confirmado ? "border-green-200" : naoVai ? "border-red-200" : ""}`}
+                                className={`card p-5 flex flex-col gap-4 ${confirmado ? "border-green-200" : naoVai ? "border-red-200" : ""} ${shareMenuId === convidado.id ? "relative z-10" : ""}`}
                             >
                                 {/* Topo: avatar + nome + badge */}
                                 <div className="flex items-start justify-between gap-3">
